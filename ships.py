@@ -12,11 +12,11 @@ class Ship:
 		self.rotated = False
 		folder = "pictures/"
 		#Image icons
-		self.submarine = pygame.image.load(folder+"submarine.jpg")
-		self.battleship = pygame.image.load(folder+"battleship.jpg")
-		self.cruiser = pygame.image.load(folder+"cruiser.jpg")
-		self.carrier = pygame.image.load(folder+"carrier.jpg")
-		self.destroyer = pygame.image.load(folder+"destroyer.jpg")
+		self.submarine = pygame.image.load(folder+"submarine.png")
+		self.battleship = pygame.image.load(folder+"battleship.png")
+		self.cruiser = pygame.image.load(folder+"cruiser.png")
+		self.carrier = pygame.image.load(folder+"carrier.png")
+		self.destroyer = pygame.image.load(folder+"destroyer.png")
 		#Image icon counter
 		self.submarine_count = 1
 		self.battleship_count = 1
@@ -24,7 +24,7 @@ class Ship:
 		self.cruiser_count = 1
 		self.destroyer_count = 1
 		#Start icon and its position
-		self.start = pygame.image.load(folder+"start.jpg")
+		self.start = pygame.image.load(folder+"start.png")
 		self.start = pygame.transform.scale(self.start, (480, 360))
 
 	def background(self):		#Background function
@@ -41,7 +41,7 @@ class Ship:
 					pygame.draw.rect(self.screen,(145, 145, 145), (600+(65*m), 63+self.cell, 63, 63), 1)		#Defines a rectangle in format ((color rgb value), (x coordinate, y coordinate, width, height), thickness in pixels)
                 		#If the grid is occupied by a ship icon, the rectangle will turn green
 				else:
-                    			pygame.draw.rect(self.screen,(25, 209, 83), (600+(65*m), 63+self.cell, 63, 63), 1)
+                    			pygame.draw.rect(self.screen,(25, 209, 83), (600+(65*m), 63+self.cell, 63, 63), 0)
 			self.cell += 65			#Moving next row down by 65 pixels to ensure vertically spaced rows
 		self.cell = 0		#Resetting cell offset
 
@@ -66,7 +66,7 @@ class Ship:
 		#Adjusting the position of all the ships initialized in __init__ function
 		self.screen.blit(self.submarine, (30, 425))
 		self.screen.blit(self.destroyer, (30, 200))
-		self.screen.blit(self.cruiser, (30, 400))
+		self.screen.blit(self.cruiser, (30, 300))
 		self.screen.blit(self.battleship, (30, 500))
 		self.screen.blit(self.carrier, (30, 600))
 		#Adjusting the position of counter texts next to the ships images
@@ -188,23 +188,23 @@ while True:
 			folder = 'pictures/'
 			if x>=36 and x<=334 and y>446 and y<=483:
 				if game.submarine_count!=0:
-					image=pygame.image.load(folder+'submarine.jpg')
+					image=pygame.image.load(folder+'submarine.png')
 					ship='submarine'
 			elif x>28 and x<311 and y>=343 and y<=389:
 				if game.cruiser_count!=0:
-					image=pygame.image.load(folder+'cruiser.jpg')
+					image=pygame.image.load(folder+'cruiser.png')
 					ship='cruiser'
 			elif x>=33 and x<494 and y>=658 and y<=696:
 				if game.carrier_count!=0:
-					image = pygame.image.load(folder+'carrier.jpg')
+					image = pygame.image.load(folder+'carrier.png')
 					ship='carrier'
 			elif x>=28 and x<=216 and y>=253 and y<=286:
 				if game.destroyer_count!=0:
-					image = pygame.image.load(folder+'destroyer.jpg')
+					image = pygame.image.load(folder+'destroyer.png')
 					ship='destroyer'
-			elif x>=36 and x<=382 and y>=554 and y<583:
+			elif x>=36 and x<=382 and y>=500 and y<550:
 				if game.battleship_count!=0:
-					image = pygame.image.load(folder+'battleship.jpg')
+					image = pygame.image.load(folder+'battleship.png')
 					ship='battleship'
 
 		if image!='':
