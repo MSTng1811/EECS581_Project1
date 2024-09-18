@@ -3,6 +3,7 @@ import socket
 import numpy as np
 import math
 
+# Importing various game-related modules and classes.
 from menu import Menu
 from server import Server
 from client import Client
