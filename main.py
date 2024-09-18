@@ -19,10 +19,14 @@ pygame.init()
 pygame.mixer.quit()
 screen = pygame.display.set_mode([1280, 720])
 
+# Initialize a grid (game board) with 10x10 cells, all set to 0 (empty state)
 CELLS = 10
 BOARD = np.zeros(shape=(CELLS,CELLS), dtype=int)
 
+# Display the welcome screen (main menu)
 welcome_screen = Menu(screen=screen)
+
+
 create_party = Server(screen=screen, server=None)
 join_party = Client(screen=screen)
 Game = BoardSetup(screen=screen, board=BOARD)
@@ -32,6 +36,7 @@ ipinput = pygame_textinput.TextInput()
 
 welcome_screen.run()
 
+# A list of the different game states/classes for easier management
 classes = [welcome_screen, create_party, join_party, Game]
 Class = welcome_screen
 
@@ -51,9 +56,11 @@ got_username = False
 got_ip = False
 missile_first_time = True
 
+# Variables for loading images and tracking the image number
 file_number = 0
 loading_images = []
 
+# Function to get username from the user
 def get_username():
     img = pygame.image.load("Text_box.png")
     screen.blit(img, (150, 230))
@@ -61,6 +68,7 @@ def get_username():
     Title = font.render("Type in your Username!", True, (0, 0, 0))
     #screen.blit(Title, (550, 600))
 
+# Function to get IP (party code) from the user
 def get_ip():
     img = pygame.image.load("Text_box.png")
     screen.blit(img, (150, 230))
@@ -68,6 +76,7 @@ def get_ip():
     Title = font.render("Type in the Party Code!", True, (0, 0, 0))
     #screen.blit(Title, (500, 600))
 
+# Load all images up to frame 214
 while file_number < 214:
     img = pygame.image.load("pictures/frame_000_delay-0.02s.png")
 
@@ -75,7 +84,7 @@ while file_number < 214:
     file_number = file_number + 1
 
 
-
+# Reset file number and initialize various state flags
 file_number = 0
 first_time = True
 second_time = True
@@ -84,22 +93,28 @@ choose_locations_first_time = True
 place_boats = False
 joined_party = False
 
+# Variables to store images and ships for the game
 image = ""
 ship = ""
 
+# Variables related to multiplayer opponents and battle state
 opp_username = None
 server = None
 start_battle = False
 
+# Game boards for both server and client
 client_board = None
 server_board = None
 change_board = False
 
+# Players for server and client
 server_player = None
 client_player = None
 
+# Main game loop
 while True:
    clock.tick(120)
+   # Capture all game events (like mouse clicks and key presses)
    events = pygame.event.get()
 
    for event in events:
