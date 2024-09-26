@@ -34,12 +34,12 @@ RED = (255, 0, 0)
 # learned how to do text in pygame and based code off of https://stackoverflow.com/questions/10467863/how-to-remove-replace-text-in-pygame
 # adds text to top of screen
 def add_text(screen, text):
-    # fills the screen black in the area wanted so that previous text doesn't show up still
-    screen.fill(BLACK, (0, 0, 430, 80))
+    # Only fill the top part of the screen where the text should be
+    screen.fill(BLACK, (0, 0, 490, 50))  # Change the height of the filled area
     font = pygame.font.Font('freesansbold.ttf', 16)
     text = font.render(text, True, RED)
     textRect = text.get_rect()
-    textRect.center = (245, 15)
+    textRect.center = (245, 15)  # Keep this in the top area
     screen.blit(text, textRect)
 # adds screen to not show other player's ships in between turns
 def add_black_screen(screen):

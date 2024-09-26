@@ -6,6 +6,8 @@ import add_text
 import place_ships
 import get_ships_num
 import battleship
+import get_difficulty
+
 
 def calculate_position_from_grid(row, col, grid_type="target"):
     # Cell size is 20x20 pixels, as defined in createPlayer1TargetGrid
@@ -62,27 +64,25 @@ def ai_easy(player_ships, target_board, hits, misses, valid_moves):
         print(f"Hits: {hits}, Misses: {misses}")
 
 
-
-
-
-
-
-
-
 def ai_medium(player_ships, target_board, hits, misses, last_hit=None):
     """AI fires randomly until it hits, then fires adjacent cells to sink ships."""
     # TODO: Implement Medium AI
     # If no hit, fire randomly
-    ai_easy(player_ships, target_board, hits, misses)
+    # ai_easy(player_ships, target_board, hits, misses)
+    print("Medium!")
 
 def ai_hard(player_ships, target_board, hits, misses):
     """AI always hits a ship in hard mode."""
     # TODO: Implement hard AI
+    print("Hard!")
+
     return
 
 
 
-def run(ai_difficulty="easy"):
+def run(ai_difficulty = "easy"):
+
+    ai_difficulty = get_difficulty.set_difficulty(battleship.SCREEN)
     print("singleplayer mode with AI difficulty:", ai_difficulty)
 
     # Get the number of ships that the user wants for the game and returns arrays
