@@ -54,12 +54,13 @@ def ai_easy(player_ships, target_board, hits, misses, valid_moves):
         copy.deepcopy(battleship.player1placedShips)  # Deep copy of player's ships to track state
     )
 
-    
     if played:
         print(f"AI successfully played at: ({row}, {col})")
+        battleship.player1Turn = True  # Add this line to switch back to player turn
     else:
         print(f"AI's move at ({row}, {col}) - ({pos}) was invalid.")
         print(f"Hits: {hits}, Misses: {misses}")
+
 
 
 
@@ -77,7 +78,7 @@ def ai_medium(player_ships, target_board, hits, misses, last_hit=None):
 def ai_hard(player_ships, target_board, hits, misses):
     """AI always hits a ship in hard mode."""
     # TODO: Implement hard AI
-                return
+    return
 
 
 
@@ -200,23 +201,24 @@ def run(ai_difficulty="easy"):
                     valid_moves  # Pass the valid moves list to the AI
                 )
 
-            # Check if the player sunk a ship after their move
-            ship_sunk = battleship.shipSunk(battleship.copyPlayer2placedShips)  # AI's ships
+            # Check if the AI sunk a ship after its move
+            ship_sunk = battleship.shipSunk(battleship.copyPlayer1placedShips)  # Player's ships
             if ship_sunk:
-                print("You sunk an AI ship!")
-                add_text.add_text(battleship.SCREEN, 'You sunk an AI ship!')
+                print("The AI sunk one of your ships!")
+                add_text.add_text(battleship.SCREEN, 'The AI sunk one of your ships!')
                 pygame.display.update()
                 pygame.time.wait(2000)  # Pause for 2 seconds to show the message
 
-            # Check if all AI ships are sunk to end the game
-            game_over = battleship.gameIsOver(battleship.copyPlayer2placedShips)
+            # Check if all player ships are sunk (end game)
+            game_over = battleship.gameIsOver(battleship.copyPlayer1placedShips)
             if game_over:
-                print("All AI ships have been sunk. Player wins!")
-                add_text.add_text(battleship.SCREEN, 'Player wins! All AI ships sunk.')
+                print("All player ships have been sunk. AI wins!")
+                add_text.add_text(battleship.SCREEN, 'AI wins! All player ships sunk.')
                 pygame.display.update()
                 pygame.time.wait(3000)
                 battleship.gameover = True  # End the game
                 break  # Exit the game loop
+
 
         turn_counter += 1  # Increment turn counter
         pygame.display.update()

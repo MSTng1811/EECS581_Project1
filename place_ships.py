@@ -1,144 +1,310 @@
 """
-Program Name: multiplayer.py
+Program Name: place_ships.py
 
 Description:
-This program contains the game loop and logic for running a multiplayer version of a Pygame-based Battleship game. It handles the placement of ships for both Player 1 and Player 2, manages turns, updates the game board with hits and misses, and determines when the game is over. The game operates in two-player mode, alternating between the players until one player wins by sinking all of the opponent's ships.
+This program handles the logic for ship placement in a Pygame-based Battleship game. It manages the process of both Player 1 and Player 2 placing their ships on the game board. It includes functionality to check the validity of ship placement, ensure ships are placed adjacent to each other, and handle ship addition to the board.
 
 Inputs:
-- pos: Mouse position for determining player actions on the grid.
-- player1ships, player2ships: Arrays containing the lengths of the ships for Player 1 and Player 2.
-- player1placedShips, player2placedShips: 2D arrays representing the positions of the ships for both players.
-- player1hits, player2hits: Arrays tracking the hits made by each player.
-- player1misses, player2misses: Arrays tracking the misses made by each player.
+- screen: The Pygame screen surface.
+- ships: Array of ship lengths to be placed by the player.
+- placedShips: 2D array representing ships that have been placed on the game board.
+- shipBoard: 2D array representing the player's ship grid.
+- pos: Mouse position for determining where the player is trying to place the ship.
 
 Output:
-- Displays updates to the game board, including ship placements, hits, misses, and win/loss messages.
-- Alternates between Player 1 and Player 2 turns, showing the appropriate updates after each move.
+- Updates the Pygame screen with the ship placements.
+- Returns the updated arrays for player1 and player2 ship placements and the grid.
 
 Code Sources:
-- Pygame documentation for event handling and drawing.
-- Based on previously implemented grid and logic for Battleship game in Pygame.
+- https://stackoverflow.com/questions/7370801/how-to-measure-elapsed-time-in-python (measuring elapsed time).
+- https://stackoverflow.com/questions/7415109/creating-a-rect-grid-in-pygame (handling Pygame rectangle grids and user clicks).
 
 Author: Zai Erb
 
-Creation Date: September 23, 2024
+Creation Date: September 21, 2024
 """
 
-import copy
-from operator import truediv
+
+from audioop import add
+import math
 from matplotlib.pyplot import pause
+from numpy import place
 import pygame
 import sys
-import add_text
-import place_ships
-import get_ships_num
-import get_game_mode
 import battleship
+import add_text
+import time
+import random
 
-def run():
-
-
-    # get the number of ships that the user wants for the game and returns a 4 tupe with size and empty placed ships array
-    arrays = get_ships_num.get_ships(battleship.player1ships, battleship.player2ships, battleship.SCREEN, battleship.player1placedShips, battleship.player2placedShips)
-    battleship.player1ships = arrays[0]
-    battleship.player2ships = arrays[1]
-    battleship.player1placedShips = arrays[2]
-    battleship.player2placedShips = arrays[3]
-
-    #run while the game is not ended
-    while not battleship.gameover:
-        
-        # gets the position of the mouse on the screen
-        pos = pygame.mouse.get_pos()
-
-    
-        # if player 1 is not ready, pass to place_ships and have player 1 place their ships
-        if not battleship.player1ready:
-            place_ships.placePlayer1Ships(battleship.SCREEN, battleship.player1ships, battleship.player1placedShips, battleship.player1ShipBoard)
-            battleship.player1ready = True
-            #create non pointer copy
-            battleship.copyPlayer1placedShips = battleship.createShallowCopy(battleship.player1placedShips)  
-        # repeat for player 2
-        if not battleship.player2ready:
-            place_ships.placePlayer2Ships(battleship.SCREEN, battleship.player2ships, battleship.player2placedShips, battleship.player2ShipBoard)
-            battleship.player2ready = True
-            battleship.copyPlayer2placedShips = battleship.createShallowCopy(battleship.player2placedShips)  
-        # add text saying battleship and add rows and cols
-        add_text.add_text(battleship.SCREEN, 'Battleship')
-        add_text.add_labels_targets(battleship.SCREEN)
-        # if it is player 1 turn, say that and print their boards
-        if(battleship.player1Turn):
-            add_text.add_text(battleship.SCREEN, 'Player 1 Turn')
-            battleship.printShipBoard(battleship.player1ShipBoard, battleship.player1placedShips, battleship.player2hits)
-            battleship.printBoard(battleship.player1TargetBoard, battleship.player1hits, battleship.player1misses)
-            add_text.add_labels_middle(battleship.SCREEN)
-            add_text.add_labels_ships(battleship.SCREEN)
-        # if it is player 2 turn, say that and print their boards
+# handles placing of player 1s ships
+def placePlayer1Ships(screen, ships, placedShips, shipBoard):
+    shipsCopy = ships
+    index = 0
+    shipLength = shipsCopy[0]
+    print("Length", shipsCopy[0])
+    initialLength = shipLength
+    # timing from https://stackoverflow.com/questions/7370801/how-to-measure-elapsed-time-in-python
+    # tracks time to place a ship
+    startTime = time.time()
+    # while the length of ships copy is greater than zero, we need to add ships
+    while len(shipsCopy) > 0:
+        # check on time
+        currentTime = time.time()
+        # if it is greater than 15 sec, exit the game
+        if currentTime - startTime > 15:
+            add_text.time_out(screen)
+            pygame.display.update()
+            pause(3)
+            pygame.quit()
+            sys.exit()
+        # if shipLength is greater than zero, we need to add ships
+        if(shipLength > 0):
+            # display that ship needs to be added
+            stringofint = (str)(initialLength)
+            toDisplay = 'Player 1, place your ship of length ' + stringofint
+            add_text.add_text(screen, toDisplay)
+            add_text.add_labels_ships(screen)
+            add_text.add_labels_middle(screen)
+            # get mouse position
+            pos = pygame.mouse.get_pos()
+            
+            # print ship board for player 1
+            battleship.printShipBoard(shipBoard, placedShips, [])
+            # handle events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    # if the mouse was clicked, check that the ship placement is valid
+                    # returns a 2 tuple with placedShips and a bool of if it was placed
+                    attempt = addShip(shipBoard, placedShips, index, pos)
+                    placedShips = attempt[0]
+                    wasPlaced = attempt[1]
+                    # if it was placed, updaate start time and decrease ship length
+                    if(wasPlaced):
+                        print("Player pos", pos)
+                        startTime = time.time()
+                        shipLength = shipLength - 1
+            pygame.display.update()
         else:
-            add_text.add_text(battleship.SCREEN, 'Player 2 Turn')
-            battleship.printShipBoard(battleship.player2ShipBoard, battleship.player2placedShips, battleship.player1hits)
-            battleship.printBoard(battleship.player2TargetBoard, battleship.player2hits, battleship.player2misses)
-            add_text.add_labels_middle(battleship.SCREEN)
-            add_text.add_labels_ships(battleship.SCREEN)
-        # handles events in pygame
-        for event in pygame.event.get():
-            # if the user wants to quit, close pygame
-            # if the user clicks, we respond accordingly
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                # if it is player 1 turn, check for a hit and checkForCollision will handle all the logic for updating hits and misses
-                if(battleship.player1Turn):
-                    played = battleship.checkForCollision(battleship.player1TargetBoard, battleship.player2ShipBoard, pos, battleship.player1hits, battleship.player1misses, battleship.player2placedShips, battleship.copyPlayer2placedShips)
-                    if played: 
-                        # if they made a valid move, update the boards
-                        battleship.printShipBoard(battleship.player1ShipBoard, battleship.player1placedShips, battleship.player2hits)
-                        battleship.printBoard(battleship.player1TargetBoard, battleship.player1hits, battleship.player1misses)
-                        add_text.add_labels_middle(battleship.SCREEN)
-                        add_text.add_labels_ships(battleship.SCREEN)
-                        pygame.display.update()
-                        # check for a sunk ship
-                        sunkenShip = battleship.shipSunk(battleship.copyPlayer2placedShips)
-                        # if they sunk a ship, check if all ships are sunk
-                        if(sunkenShip):
-                            add_text.add_text(battleship.SCREEN, 'You sunk a ship!')
-                            pygame.display.update()
-                            ended = battleship.gameIsOver(battleship.copyPlayer2placedShips)
-                            if ended:
-                                battleship.gameover = True
-                                add_text.add_text(battleship.SCREEN, 'Player 1 won!')
-                                pygame.display.update()
-                        # wait for 1 seconds and switch turn
-                        pause(1)
-                        if not battleship.gameover:
-                            add_text.add_black_screen(battleship.SCREEN)
-                            pygame.display.update()
-                            pause(2)
-                        battleship.player1Turn = False
-                else:
-                    # otherwise repeat for player 2
-                    played = battleship.checkForCollision(battleship.player2TargetBoard, battleship.player1ShipBoard, pos, battleship.player2hits, battleship.player2misses, battleship.player1placedShips, battleship.copyPlayer1placedShips)
-                    if played:
-                        battleship.printShipBoard(battleship.player2ShipBoard, battleship.player2placedShips, battleship.player1hits)
-                        battleship.printBoard(battleship.player2TargetBoard, battleship.player2hits, battleship.player2misses)
-                        add_text.add_labels_middle(battleship.SCREEN)
-                        add_text.add_labels_ships(battleship.SCREEN)
-                        pygame.display.update()
-                        sunkenShip = battleship.shipSunk(battleship.copyPlayer1placedShips)
-                        if(sunkenShip):
-                            add_text.add_text(battleship.SCREEN, 'You sunk a ship!')
-                            pygame.display.update()
-                            ended = battleship.gameIsOver(battleship.copyPlayer1placedShips)
-                            if ended:
-                                battleship.gameover = True
-                                add_text.add_text(battleship.SCREEN, 'Player 2 won!')
-                                pygame.display.update()
-                        pause(1)
-                        if not battleship.gameover:
-                            add_text.add_black_screen(battleship.SCREEN)
-                            pygame.display.update()
-                            pause(2)
-                        battleship.player1Turn = True
+            # if ship is placed, move on to the next ship
+            shipsCopy.pop(0)
+            if(len(shipsCopy) != 0):
+                shipLength = shipsCopy[0]
+                initialLength = shipLength
+                index = index + 1
+# same as above but for player 2
+def placePlayer2Ships(screen, ships, placedShips, shipBoard):
+    shipsCopy = ships
+    index = 0
+    shipLength = shipsCopy[0]
+    initialLength = shipLength
+    startTime = time.time()
+    while len(shipsCopy) > 0:
+        currentTime = time.time()
+        if currentTime - startTime > 15:
+            add_text.time_out(screen)
+            pygame.display.update()
+            pause(3)
+            pygame.quit()
+            sys.exit()
+        if(shipLength > 0):
+            stringofint = (str)(initialLength)
+            toDisplay = 'Player 2, place your ship of length ' + stringofint
+            add_text.add_text(screen, toDisplay)
+            pos = pygame.mouse.get_pos()
+            battleship.printShipBoard(shipBoard, placedShips, [])
+            # createPlayer1ShipGrid()
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    attempt = addShip(shipBoard, placedShips, index, pos)
+                    placedShips = attempt[0]
+                    wasPlaced = attempt[1]
+                    if(wasPlaced):
+                        startTime = time.time()
+                        shipLength = shipLength - 1
+                   
+            pygame.display.update()
+        else:
+            shipsCopy.pop(0)
+            print(len(shipsCopy))
+            if(len(shipsCopy) != 0):
+                shipLength = shipsCopy[0]
+                initialLength = shipLength
+                index = index + 1
 
-        pygame.display.update()
+
+def placeAiShips(screen, ships, placedShips, shipBoard):
+    shipsCopy = ships
+    index = 0
+    shipLength = shipsCopy[0]
+    initialLength = shipLength
+    startTime = time.time()
+
+    while len(shipsCopy) > 0:
+        currentTime = time.time()
+        
+        # Timeout logic (if needed)
+        if currentTime - startTime > 15:
+            add_text.time_out(screen)
+            pygame.display.update()
+            pause(3)
+            pygame.quit()
+            sys.exit()
+
+        if shipLength > 0:
+            # Randomly select orientation (0 for horizontal, 1 for vertical)
+            orientation = random.randint(0, 1)
+
+            # Ensure the random position is valid for the given ship length and orientation
+            if orientation == 0:  # Horizontal
+                row = random.randint(0, 9)
+                col = random.randint(0, 9 - shipLength + 1)  # Ensure ship fits horizontally
+            else:  # Vertical
+                row = random.randint(0, 9 - shipLength + 1)
+                col = random.randint(0, 9)  # Ensure ship fits vertically
+
+            # Add the ship one segment at a time by calculating the positions
+            valid_position = True
+            temp_ship = []
+
+            for i in range(shipLength):
+                if orientation == 0:  # Horizontal placement
+                    pos = shipBoard[row][col + i].topleft
+                    temp_ship.append(shipBoard[row][col + i])
+                else:  # Vertical placement
+                    pos = shipBoard[row + i][col].topleft
+                    temp_ship.append(shipBoard[row + i][col])
+
+                # Check if any part of this ship would overlap with an existing ship
+                if any(temp_rect in ship for ship in placedShips for temp_rect in temp_ship):
+                    valid_position = False
+                    break
+
+            if valid_position:
+                # If the ship can be placed, add it to the placedShips array
+                for i in range(shipLength):
+                    if orientation == 0:
+                        placedShips[index].append(shipBoard[row][col + i])
+                    else:
+                        placedShips[index].append(shipBoard[row + i][col])
+
+                print(f"AI placed ship {index + 1} at: {[(row, col) for _ in range(shipLength)]}")
+                startTime = time.time()  # Reset the start time
+                shipLength = 0  # Ship has been placed, move on to the next one
+            else:
+                # If placement was invalid, try again
+                print(f"Invalid placement for ship at row {row}, col {col}. Retrying...")
+                continue  # Skip the rest of the loop and retry
+
+            pygame.display.update()
+        else:
+            # Once the ship is placed, move on to the next one
+            shipsCopy.pop(0)
+            if len(shipsCopy) > 0:
+                index += 1
+                shipLength = shipsCopy[0]
+                initialLength = shipLength
+
+
+
+# handles logic for adding ship
+def addShip(shipBoard, placedShips, index, pos):
+    # starts at false
+    shipAdded = False
+    # gets the current ship
+    currentShip = placedShips[index]
+    # get rectangle that was selected
+    rect = battleship.getRectangle(shipBoard, pos)
+    # if row is invalid, make user click new spot
+    if battleship.getRow(shipBoard, rect) == -1 or battleship.getCol(shipBoard, rect) == -1:
+        return(placedShips, shipAdded) 
+    # otherwise if it is a new ship make sure it is not already placed
+    if(len(currentShip) == 0):
+        alreadyPlaced = inShips(placedShips, pos)
+        if not alreadyPlaced:
+            currentShip = addToShips(placedShips, pos, currentShip, shipBoard)
+            shipAdded = True
+    else:
+        # if ship already exists, check that new addition isn't already placed and check that it touches the current ship
+        alreadyPlaced = inShips(placedShips, pos)
+        if not alreadyPlaced:
+            touchesShipCheck = touchesShip(shipBoard, placedShips, index, pos)
+            if touchesShipCheck:
+                currentShip = addToShips(placedShips, pos, currentShip, shipBoard)
+                shipAdded = True
+    # add current ship to placedships
+    placedShips[index] = currentShip
+    # return placed ships and a bool of if it was added
+    return (placedShips, shipAdded)
+
+# checks that your placement touches the part of the ship already placed
+def touchesShip(shipBoard, placedShips, index, pos):
+    currentShip = placedShips[index]
+    rect = battleship.getRectangle(shipBoard, pos)
+    row = battleship.getRow(shipBoard, rect)
+    col = battleship.getCol(shipBoard, rect)
+    # if length is 1, it can be above, below, or either side
+    if len(currentShip) == 1:
+        for ship in currentShip:
+            currentRow = battleship.getRow(shipBoard, ship)
+            currentCol = battleship.getCol(shipBoard, ship)
+            if row == currentRow:
+                difference = abs(col-currentCol)
+                if difference == 1:
+                    return True
+            elif col == currentCol:
+                difference = abs(row-currentRow)
+                if difference == 1:
+                    return True
+    else:
+        # if length isn't one you need to check that it is aligned with currentship
+        ship1 = currentShip[0]
+        ship2 = currentShip[1]
+        ship1row = battleship.getRow(shipBoard, ship1)
+        ship2row = battleship.getRow(shipBoard, ship2)
+        ship1col = battleship.getCol(shipBoard, ship1)
+        ship2col = battleship.getCol(shipBoard, ship2)
+        if ship1row == ship2row:
+            for ship in currentShip:
+                shiprow = battleship.getRow(shipBoard, ship)
+                if row == shiprow:
+                    shipcol = battleship.getCol(shipBoard, ship)
+                    difference = abs(shipcol-col)
+                    if difference == 1:
+                        return True
+        elif ship2col == ship1col:
+            for ship in currentShip:
+                shipcol = battleship.getCol(shipBoard, ship)
+                if col == shipcol:
+                    shiprow = battleship.getRow(shipBoard, ship)
+                    difference = abs(shiprow-row)
+                    if difference == 1:
+                        return True
+    return False
+
+
+
+# checks if rect has already been placed
+def inShips(placedShips, pos):
+    for x in range(0, len(placedShips)):
+        for y in range(0, len(placedShips[x])):
+            tempRect = (placedShips[x])[y]
+            if tempRect.collidepoint(pos):
+                return True
+    return False
+
+# adds ship to current ship
+def addToShips(placedShips, pos, currentShip, shipBoard):
+    for x in range(0, 10):
+        for y in range(0, 10):
+            tempRect = (shipBoard[x])[y]
+            if tempRect.collidepoint(pos):
+                currentShip.append(tempRect)
+                return currentShip
+    return currentShip
+    
