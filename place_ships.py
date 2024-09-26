@@ -38,62 +38,67 @@ import random
 
 # handles placing of player 1s ships
 def placePlayer1Ships(screen, ships, placedShips, shipBoard):
+    player_ship_coords = []  # List to track the coordinates of placed ships
+    
     shipsCopy = ships
     index = 0
     shipLength = shipsCopy[0]
     print("Length", shipsCopy[0])
     initialLength = shipLength
-    # timing from https://stackoverflow.com/questions/7370801/how-to-measure-elapsed-time-in-python
-    # tracks time to place a ship
-    startTime = time.time()
-    # while the length of ships copy is greater than zero, we need to add ships
+    startTime = time.time()  # Start tracking time
+
     while len(shipsCopy) > 0:
-        # check on time
         currentTime = time.time()
-        # if it is greater than 15 sec, exit the game
+        
         if currentTime - startTime > 15:
             add_text.time_out(screen)
             pygame.display.update()
             pause(3)
             pygame.quit()
             sys.exit()
-        # if shipLength is greater than zero, we need to add ships
-        if(shipLength > 0):
-            # display that ship needs to be added
-            stringofint = (str)(initialLength)
+
+        if shipLength > 0:
+            stringofint = str(initialLength)
             toDisplay = 'Player 1, place your ship of length ' + stringofint
             add_text.add_text(screen, toDisplay)
             add_text.add_labels_ships(screen)
             add_text.add_labels_middle(screen)
-            # get mouse position
-            pos = pygame.mouse.get_pos()
             
-            # print ship board for player 1
+            pos = pygame.mouse.get_pos()
             battleship.printShipBoard(shipBoard, placedShips, [])
-            # handle events
+
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    # if the mouse was clicked, check that the ship placement is valid
-                    # returns a 2 tuple with placedShips and a bool of if it was placed
+                    # Attempt to place the ship
                     attempt = addShip(shipBoard, placedShips, index, pos)
                     placedShips = attempt[0]
                     wasPlaced = attempt[1]
-                    # if it was placed, updaate start time and decrease ship length
-                    if(wasPlaced):
+                    
+                    if wasPlaced:
                         print("Player pos", pos)
                         startTime = time.time()
-                        shipLength = shipLength - 1
+                        shipLength -= 1
+                        
+                        # Assuming that `addShip` updates the board with the ship's coordinates
+                        # and `pos` is the top-left coordinate where the ship starts
+                        # Get ship coordinates and append to player_ship_coords
+                        player_ship_coords.append(pos)
+
             pygame.display.update()
         else:
-            # if ship is placed, move on to the next ship
             shipsCopy.pop(0)
-            if(len(shipsCopy) != 0):
+            if len(shipsCopy) != 0:
                 shipLength = shipsCopy[0]
                 initialLength = shipLength
-                index = index + 1
+                index += 1
+
+    # Now you have all ship coordinates in player_ship_coords
+    print("Player 1 placed ships at:", player_ship_coords)
+    return player_ship_coords  # Return the list of ship coordinates
+
 # same as above but for player 2
 def placePlayer2Ships(screen, ships, placedShips, shipBoard):
     shipsCopy = ships
