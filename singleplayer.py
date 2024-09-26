@@ -70,25 +70,13 @@ def ai_easy(player_ships, target_board, hits, misses, valid_moves):
 
 def ai_medium(player_ships, target_board, hits, misses, last_hit=None):
     """AI fires randomly until it hits, then fires adjacent cells to sink ships."""
-    if last_hit:
-        x, y = last_hit
-        # Check adjacent cells
-        for dx, dy in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
-            nx, ny = x + dx, y + dy
-            if 0 <= nx < 10 and 0 <= ny < 10 and target_board[nx][ny] == 0:
-                pos = target_board[nx][ny].topleft
-                if battleship.checkForCollision(target_board, player_ships, pos, hits, misses, player_ships, copy.deepcopy(player_ships)):
-                    return (nx, ny)
+    # TODO: Implement Medium AI
     # If no hit, fire randomly
     ai_easy(player_ships, target_board, hits, misses)
 
 def ai_hard(player_ships, target_board, hits, misses):
     """AI always hits a ship in hard mode."""
-    for x in range(10):
-        for y in range(10):
-            if(player_ships[x][y] > 0 and target_board[x][y] == 0):
-                pos = target_board[x][y].topleft
-                battleship.checkForCollision(target_board, player_ships, pos, hits, misses, player_ships, copy.deepcopy(player_ships))
+    # TODO: Implement hard AI
                 return
 
 
