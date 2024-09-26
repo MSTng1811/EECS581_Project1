@@ -20,6 +20,7 @@ class BoardSetup:
         self.carrCount = 1
         self.batCount = 1
         self.subCount = 1
+        self.allShipPlaced = False
         self.start = pygame.image.load("pictures/start.png")
         self.start = pygame.transform.scale(self.start, (480, 360))
         self.offset = 0
@@ -156,6 +157,9 @@ class BoardSetup:
 	#Calling other defined functions
         self.generateGrid()
         self.shipSet()
+        
+    
 	#The condition below makes sures that all the ships are positioned before the game starts
         if self.carrCount==0 and self.batCount==0 and self.subCount==0 and self.crusCount==0 and self.destCount==0:
             self.screen.blit(self.start, (-90, 70))
+            self.allShipPlaced = True
