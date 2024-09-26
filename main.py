@@ -37,7 +37,7 @@ ipinput = pygame_textinput.TextInput()
 welcome_screen.run()
 
 # A list of the different game states/classes for easier management
-classes = [welcome_screen, create_party, join_party, Game]
+classes = [welcome_screen, create_party, join_party, Game]#, launch_missiles, start_game]
 Class = welcome_screen
 
 clock = pygame.time.Clock()
@@ -65,8 +65,8 @@ def get_username():
     img = pygame.image.load("Text_box.png")
     screen.blit(img, (150, 230))
     font = pygame.font.SysFont("arial", 72)
-    Title = font.render("Type in your Username!", True, (0, 0, 0))
-    #screen.blit(Title, (550, 600))
+    # Title = font.render("Type in your Username!", True, (0, 0, 0))
+    # screen.blit(Title, (550, 600))
 
 # Function to get IP (party code) from the user
 def get_ip():
@@ -74,7 +74,7 @@ def get_ip():
     screen.blit(img, (150, 230))
     font = pygame.font.SysFont("arial", 72)
     Title = font.render("Type in the Party Code!", True, (0, 0, 0))
-    #screen.blit(Title, (500, 600))
+    screen.blit(Title, (500, 600))
 
 # Load all images up to frame 214
 while file_number < 214:
@@ -111,15 +111,17 @@ change_board = False
 server_player = None
 client_player = None
 
+game_ruinning = True
+
 # Main game loop
-while True:
+while game_ruinning:
    clock.tick(120)
    # Capture all game events (like mouse clicks and key presses)
    events = pygame.event.get()
 
    for event in events:
        if event.type == pygame.QUIT:
-           break
+           game_ruinning = False
        if event.type == pygame.MOUSEBUTTONDOWN:
            x, y = pygame.mouse.get_pos()
            if Class == classes[0]:
@@ -130,7 +132,7 @@ while True:
                    changeClass_create_party = True
                    loading = True
            elif Class == classes[1]:
-               if Class.start_game:
+               if True:
                    if x>= 448 and x <= 850 and y >= 569 and y <= 703:
                        print("Start Battle")
                        changeClass_boat_locations = True
@@ -144,27 +146,27 @@ while True:
 
                print(x, y)
                if x >= 36 and x <= 334 and y >= 446 and y <= 483:
-                   if Class.Submarine_counter != 0:
+                   if Class.subCount != 0:
                        image = pygame.image.load(dir + "submarine.png")
                        ship = "submarine"
 
                elif x >= 28 and x <= 311 and y >= 343 and y <= 389:
-                   if Class.Reg_Ship_counter != 0:
+                   if Class.destCount != 0:
                        image = pygame.image.load(dir + "cruiser.png")
                        ship = "cruiser"
 
                elif x >= 33 and x <= 494 and y >= 658 and y <= 696:
-                   if Class.Carrier_counter != 0:
+                   if Class.carrCount != 0:
                        image = pygame.image.load(dir + "carrier.png")
                        ship = "carrier"
 
                elif x >= 36 and x <= 382 and y >= 554 and y <= 583:
-                   if Class.Battle_Ship_counter != 0:
+                   if Class.batCount != 0:
                        image = pygame.image.load(dir + "battleship.png")
                        ship = "battleship"
 
                elif x >= 28 and x <= 216 and y >= 253 and y <= 286:
-                   if Class.Small_Ship_counter != 0:
+                   if Class.crusCount != 0:
                        image = pygame.image.load(dir + "destroyer.png")
                        ship = "destroyer"
 
@@ -172,11 +174,11 @@ while True:
                    print("started battle")
                    start_battle = True
 
-           elif Class == launch_missiles:
-               x, y = pygame.mouse.get_pos()
-               x = math.floor((x - 650) / 60)
-               y = math.floor((y - 90) / 60)
-               change_board = True
+        #    elif Class == launch_missiles:
+        #        x, y = pygame.mouse.get_pos()
+        #        x = math.floor((x - 650) / 60)
+        #        y = math.floor((y - 90) / 60)
+        #        change_board = True
 
    if loading:
        if file_number == 0:
@@ -307,7 +309,7 @@ while True:
                change_board = False
                server_player.change_board(x, y)
        else:
-           client_player.run(str(join_party.decrypted))
+           client_player.run(str(join_party.username))
            if change_board:
                change_board = False
                client_player.change_board(x, y)

@@ -20,9 +20,11 @@ class Server:
         PORT = 8080	#Default port for web servers
 	#Here we are creating a socket stream to establish a network, with AF_INET meaning IPv4 protocol, and SOCK_STREAM establishing TCP protocol
         self.server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server.bind(('', PORT))	#Binding the port with the established network stream
+        
+        self.server.bind(('localhost', PORT))	#Binding the port with the established network stream
         self.server.listen()		#listen() will help us to access this port via the communication protocol we set up
-
+        print(self.server.getsockname())		#Server is running message
+        print("Server is running...")		#Server is running message
     def getInvite(self):		#Function to generate a team invite code (IP address) to connect to the multiplayer game
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)		#Here we are establishing a UDP protocol for data sending
         s.connect(("8.8.8.8", 80))		#Default IP
