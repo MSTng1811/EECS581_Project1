@@ -20,9 +20,10 @@ class BoardSetup:
         self.carrCount = 1
         self.batCount = 1
         self.subCount = 1
+        self.allShipPlaced = False
         self.start = pygame.image.load("pictures/start.png")
         self.start = pygame.transform.scale(self.start, (480, 360))
-        self.offset = 0;
+        self.offset = 0
 
     def generateGrid(self):		#Function to generate 10x10 grid board
         letters = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"]
@@ -39,14 +40,14 @@ class BoardSetup:
 
         #After generating the grid, we will label the grids with the index values by iterating through each grid position
         for x, i in enumerate(self.board):
-            font = pygame.font.Font("arial", 48)
+            font = pygame.font.SysFont("arial", 48)
             num = font.render(str(x+1), True, (255, 255, 255))
             self.screen.blit(num, (610+(x*65), 8))		#Placing the numbers on each grid horizontally
             letter = font.render(letters[x], True, (255,255,255))
             self.screen.blit(letter, (570, 60+(x*65)))		#Placing the alphabets on each grid vertically
 
     def shipSet(self):		#Function to place ship icons on the game screen
-        font = pygame.font.Font("arial", 72)
+        font = pygame.font.SysFont("arial", 72)
         #Setting font for count value of ships
         destCount = font.render(str(self.destCount), True, (255, 255, 255))
         crusCount = font.render(str(self.crusCount), True, (255, 255, 255))
@@ -78,7 +79,7 @@ class BoardSetup:
                     image = pygame.transform.rotate(image, -90)
                     self.rotated = False
             width, height = image.get_size()
-            self.run()
+            self.run_first()
             self.screen.blit(image, (x-width/2, y-height/2))
             pygame.display.update()
 
@@ -156,6 +157,9 @@ class BoardSetup:
 	#Calling other defined functions
         self.generateGrid()
         self.shipSet()
+        
+    
 	#The condition below makes sures that all the ships are positioned before the game starts
         if self.carrCount==0 and self.batCount==0 and self.subCount==0 and self.crusCount==0 and self.destCount==0:
             self.screen.blit(self.start, (-90, 70))
+            self.allShipPlaced = True

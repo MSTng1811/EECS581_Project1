@@ -1,4 +1,6 @@
 import base64
+import pygame
+import socket
 
 class Client:
 
@@ -11,7 +13,7 @@ class Client:
         self.dec = None
 
     def heading(self):			#Generating heading
-        font = self.pygame.font.SysFont("arial", 72)
+        font = pygame.font.SysFont("arial", 72)
         head = font.render("Waiting for Game to start...", True, (255, 255, 255))
         self.screen.blit(head, (30, 30))
 
@@ -20,7 +22,7 @@ class Client:
 
     def conClient(self, host, username):			#Function to connect to the host server
         self.client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)		#Creating a network stream with IPv4 and TCP protocol
-        print(host)
+        print("Host ",host)
         self.client.connect((host, 8080))		#Connect to host server at port 8080
         self.client.send(bytes(username, 'utf-8'))
 
@@ -37,8 +39,9 @@ class Client:
         self.background()
         self.heading()
         self.decrypt(ip=ip)
+        print("ip ", ip)
         if self.dec and first:
-            self.conClient(self.dec, username=username)
+            self.conClient(ip, username=username)
             self.wait1 = True
         pygame.display.update()
         if self.wait2:

@@ -20,6 +20,9 @@ class Battle:
         self.initial = True
         self.server = None
         self.client = None
+        self.last_hit = None #track last hit position (x, y)
+        self.possible_targets = [] #possible orthogonal positions to fire upon
+        self.direction = None #store direction of search
 
     def randomBoard(self):	#Function to generate a random board. Will be used when performing the attacking attempts
         for x, i in enumerate(self.board):
@@ -103,6 +106,52 @@ class Battle:
         self.screen.blit(desc, (30, 20))
         pygame.display.update()
 
+    def medium_ai_fire(self):
+        if self.last_hit is not None:
+            #if we have a hit, try orthogonally adjacent spaces
+            if not self.possible_targets:
+                self.possible_targets = self.get_adjacent_positions(self.last_hit)
+            #fire at one of adjacent targets
+            target = self.possible_targets.pop(0)
+            return target
+        #if no hits, fire randomly
+        return self.random_fire()
+        
+    def random_fire(self):
+        while True:
+            x = random.randint(0, 9)
+            y = random.randint(0, 9)
+            #check if spot if not alr hit
+            if self.enemyBrd[y][x] == 0:
+                return (x, y)
+    
+    def get_adjacent_positions(self, pos):
+        x, y = pos
+        adjacent_positions = []
+        #check for valid adjacent positions
+        if x > 0 and self.enemyBrd[y][x-1] == 0: #left
+            adjacent_positions.append((x-1, y))
+        if x < 9 and self.enemyBrd[y][x+1] == 0: #rigth
+            adjacent_positions.append((x+1, y))
+        if y > 0 and self.enemyBrd[y-1][x] == 0: #up
+            adjacent_positions.append((x, y-1))
+        if y < 9 and self.enemyBrd[y+1][x] == 0: #down
+            adjacent_positions.append((x, y+1))
+        return adjacent_positions
+        
+    def ai_turn(self):
+        target = self.medium_ai_fire()
+        x, y = target
+        print(f"AI firing at {x}, {y}")
+        #check if the ai hits a ship
+        if self.enemyBrd[y][x] == 1: #ai hits a ship
+            print("AI hits a ship!")
+            self.enemyBrd[y][x] = 2
+            self.last_hit = (x, y)
+        else:
+            print("AI misses")
+            self.enemyBrd[y][x] = 1 #mark it as a miss
+
     def run(self, ip):		#Function combining all the defined functions and running the battle module
         if self.initial:
             self.createSocket(ip=ip)
@@ -115,6 +164,12 @@ class Battle:
             self.pygame.display.update()
             self.first = not self.first
             if not self.myTurn:		#Opponent's turn
+                #call AI turn func
+                self.ai_turn()
+                #switch back to player's turn
+                self.myTurn = True
+                self.first = True
+            else:
                 if self.server:		#If the opponent is host
                     arr = self.connect.recv(1024).decode().split("_")		#Receiving data from socket
                     if arr[0] == "Target Hit" or arr[0] == "Missed":

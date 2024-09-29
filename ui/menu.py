@@ -9,28 +9,31 @@ class Menu:
         head = font.render("BATTLE SHIP", True, (255, 255, 255))
         self.screen.blit(head, (30, 30))
 
-    def vsPlayer(self):  
+    def joinButton(self):
+        join = pygame.image.load("pictures/join.png")
+        join = pygame.transform.scale(join, (480, 360))
+        self.screen.blit(join, (900, 0))
+
+    def createButton(self):
+        create = pygame.image.load("pictures/create.png")
+        create = pygame.transform.scale(create, (480, 360))
+        self.screen.blit(create, (900, 550))
+
+    def singleGameButton(self):  
         single_game = pygame.image.load("pictures/single.png")  
         single_game = pygame.transform.scale(single_game, (480, 360))
-        self.screen.blit(single_game, (450, 250))
-        
-    def vsAIButton(self):
-        vs_ai = pygame.image.load("pictures/single.png")
-        vs_ai = pygame.transform.scale(vs_ai, (480, 360))
-        self.screen.blit(vs_ai, (450, 500))
+        self.screen.blit(single_game, (900, 230))  
 
     def run(self):
         self.screen.fill((0, 0, 0))
         self.heading()
-        self.vsPlayer()
-        self.vsAIButton() 
+        self.joinButton()
+        self.singleGameButton()  
+        self.createButton()
         pygame.display.update()
 
     def difficultyMenu(self):  
         self.screen.fill((0, 0, 0))
-        font = pygame.font.SysFont("arial", 72)
-        temp = font.render("Please select AI difficulty", True, (255, 255, 255))
-        self.screen.blit(temp, (30, 90))
         self.heading()
         self.easyButton()
         self.mediumButton()
@@ -51,4 +54,3 @@ class Menu:
         hard = pygame.image.load("pictures/hard.png")
         hard = pygame.transform.scale(hard, (480, 360))
         self.screen.blit(hard, (900, 550))
-
