@@ -21,7 +21,7 @@ WINDOW_HEIGHT = 400
 #width of window for pygame
 WINDOW_WIDTH = 490
 #initializes screen in pygame
-SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), flags=pygame.SCALED)
+SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
 
 # following code is inspired and similar to thread on creating a grid for a snake game in pygane
 # https://stackoverflow.com/questions/33963361/how-to-make-a-grid-in-pygame
