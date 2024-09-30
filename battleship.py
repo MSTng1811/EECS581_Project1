@@ -251,6 +251,19 @@ def printShipBoard(board, ships, hits):
             else:
                 pygame.draw.rect(SCREEN, WHITE, y, 1)
 
+def printAIShipBoard(board, ships, hits, misses):
+    for x in board:
+        for y in x:
+            if(inShips(ships, y)):
+                if(inHits(hits, y)):
+                    pygame.draw.rect(SCREEN, RED, y, 1)
+                else:
+                    pygame.draw.rect(SCREEN, BLUE, y, 1)
+            elif(inMisses(misses, y)):
+                pygame.draw.rect(SCREEN, GREEN, y, 1)
+            else:
+                pygame.draw.rect(SCREEN, WHITE, y, 1)              
+
 
 
 # so that each import does not call main function

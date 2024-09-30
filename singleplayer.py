@@ -89,18 +89,32 @@ def ai_hard():
                 battleship.player2hits,         # AI's hit list
                 battleship.player2misses,       # AI's miss list
                 battleship.player1placedShips,  # Player's placed ships (being attacked by AI)
-                copy.deepcopy(battleship.player1placedShips)  # Deep copy of player's ships to track state
+                battleship.copyPlayer1placedShips  # Deep copy of player's ships to track state
             )
+
+            if played:
+                print(f"AI hits at {pos}.")
+                # Check if the ship was sunk
+                sunkenShip = battleship.shipSunk(battleship.copyPlayer1placedShips)  # Check if player ship was sunk
+                if sunkenShip:
+                    add_text.add_text(battleship.SCREEN, 'The AI sunk one of your ships!')
+                    pygame.display.update()
+
+                # Check if all of the player's ships have been sunk (end game)
+                if battleship.gameIsOver(battleship.copyPlayer1placedShips):
+                    battleship.gameover = True
+                    add_text.add_text(battleship.SCREEN, 'AI wins! All Player ships sunk.')
+                    pygame.display.update()
+                    return  # End the game when all player ships are sunk
+                else:
+                    battleship.player1Turn = True  # Switch back to player's turn after a hit
+                return  # End AI's turn after a valid move
 
         print("SHIPS", battleship.player1placedShips)
 
-        if played:
-            battleship.player1Turn = True
-            print(f"AI hits at {pos}.")
-            return  # End the AI's turn after a hit
-        
-        else:
-            print(f"AI's move at ({pos}) was invalid.")
+    print(f"AI's move at ({pos}) was invalid.")
+
+
 
 
 
@@ -166,7 +180,7 @@ def run():
         # Player 1's turn
         if battleship.player1Turn:
             add_text.add_text(battleship.SCREEN, 'Player 1 Turn')
-            battleship.printShipBoard(battleship.player1ShipBoard, battleship.player1placedShips, battleship.player2hits)
+            battleship.printAIShipBoard(battleship.player1ShipBoard, battleship.player1placedShips, battleship.player2hits, battleship.player2misses)
             battleship.printBoard(battleship.player1TargetBoard, battleship.player1hits, battleship.player1misses)
 
             for event in pygame.event.get():
@@ -214,10 +228,13 @@ def run():
             print(f"AI's turn {turn_counter}: AI is thinking...")
             # print(f"Valid moves: {valid_moves}")
 
+            print("player 2 misses", battleship.player2misses)
+            print("player 2 hits", battleship.player2hits)
             # Display AI's board showing hits and misses during the AI's turn
             add_text.add_text(battleship.SCREEN, 'AI Turn')
-            battleship.printShipBoard(battleship.player2ShipBoard, battleship.player2placedShips, battleship.player1hits)
+            battleship.printAIShipBoard(battleship.player2ShipBoard, battleship.player2placedShips, battleship.player1hits, battleship.player1misses)
             battleship.printBoard(battleship.player2TargetBoard, battleship.player2hits, battleship.player2misses)
+
 
             # Let the AI make its move based on the difficulty
             if ai_difficulty == "easy":
@@ -233,20 +250,15 @@ def run():
                 battleship.player1Turn = 1
 
             # Check if the AI sunk a ship after its move
-            ship_sunk = battleship.shipSunk(battleship.copyPlayer1placedShips)  # Player's ships
-            if ship_sunk:
-                print("The AI sunk one of your ships!")
-                add_text.add_text(battleship.SCREEN, 'The AI sunk one of your ships!')
+            sunkenShip = battleship.shipSunk(battleship.copyPlayer1placedShips)  # Player's ships
+            if(sunkenShip):
+                add_text.add_text(battleship.SCREEN, 'You sunk a ship!')
                 pygame.display.update()
-                pygame.time.wait(2000)  # Pause for 2 seconds to show the message
-
-            # Check if AI wins by counting hits
-            if len(battleship.player2hits) >= total_player_ship_parts:
-                add_text.add_text(battleship.SCREEN, 'AI wins! All Player 1 ships sunk.')
-                pygame.display.update()
-                pygame.time.wait(3000)
-                battleship.gameover = True
-                break
+                ended = battleship.gameIsOver(battleship.copyPlayer2placedShips)
+                if ended:
+                    battleship.gameover = True
+                    add_text.add_text(battleship.SCREEN, 'Player 1 won!')
+                    pygame.display.update()
 
 
         turn_counter += 1  # Increment turn counter
