@@ -77,26 +77,47 @@ def get_adjacent_cells(row, col, valid_moves):
             adjacent_cells.append(move)
     return adjacent_cells
 
-def ai_medium(player_ships, target_board, hits, misses, valid_moves, last_hit=None, ship_in_progress=None):
+def ai_medium(player_ships, target_board, hits, misses, valid_moves, last_hit=None, ship_in_progress=None, direction=None):
     """AI fires randomly until it hits, then fires adjacent cells until the ship is sunk."""
     if not valid_moves:
         print("No more moves left for the AI")
-        return last_hit, ship_in_progress
+        return last_hit, ship_in_progress, direction
     if ship_in_progress:
         # If there's a ship being attacked, target adjacent cells
         row, col = ship_in_progress
-        adjacent_cells = get_adjacent_cells(row, col, valid_moves)
-        if adjacent_cells:
-            # Fire at an adjacent cell
-            row, col = random.choice(adjacent_cells)
-            valid_moves.remove((row, col))
+        if direction == "up" and (row - 1, col) in valid_moves:
+            row, col = row - 1, col
+        elif direction == "down" and (row + 1, col) in valid_moves:
+            row, col = row + 1, col
+        elif direction == "left" and (row, col - 1) in valid_moves:
+            row, col = row, col - 1
+        elif direction == "right" and (row, col + 1) in valid_moves:
+            row, col = row, col + 1
         else:
-            # If no adjacent cells are valid, fire randomly again
-            row, col = random.choice(valid_moves)
-            valid_moves.remove((row, col))
-            ship_in_progress = None
+            # If the direction is blocked, reset and try adjacent cells from the original hit
+            direction = None
+        if not direction:
+            # Choose a new direction from adjacent cells
+            adjacent_cells = get_adjacent_cells(last_hit[0], last_hit[1], valid_moves)
+            if adjacent_cells:
+                row, col = random.choice(adjacent_cells)
+                valid_moves.remove((row, col))
+                # Set the direction based on the move
+                if row < last_hit[0]:
+                    direction = "up"
+                elif row > last_hit[0]:
+                    direction = "down"
+                elif col < last_hit[1]:
+                    direction = "left"
+                elif col > last_hit[1]:
+                    direction = "right"
+            else:
+                # If no adjacent cells, fire randomly
+                row, col = random.choice(valid_moves)
+                ship_in_progress = None
+                direction = None
     else:
-        # Fire randomly if no ship is being targeted
+        # If no adjacent cells are valid, fire randomly again
         row, col = random.choice(valid_moves)
         valid_moves.remove((row, col))
     # Calculate pos from the grid
@@ -120,17 +141,17 @@ def ai_medium(player_ships, target_board, hits, misses, valid_moves, last_hit=No
             ship_in_progress = (row, col)
             last_hit = (row, col)
         else:
-            ship_in_progress = None  # Reset if it was a miss
-            last_hit = None
+            direction = None
         # Check if a ship was sunk
         if battleship.shipSunk(battleship.copyPlayer1placedShips):
             print("AI sunk a ship!")
             ship_in_progress = None  # Reset targeting if the ship is sunk
             last_hit = None
+            direction = None
         battleship.player1Turn = True  # Switch to player turn after AI finishes
     else:
         print(f"AI's move at ({row}, {col}) - ({pos}) was invalid.")
-    return last_hit, ship_in_progress
+    return last_hit, ship_in_progress, direction
     
 def ai_hard():
     """AI always hits a ship in hard mode by targeting known ship rectangles."""
@@ -203,6 +224,7 @@ def run():
 
     last_ai_hit = None  # Track last AI hit for medium difficulty
     ship_in_progress = None  # Track if AI is focusing on sinking a ship
+    direction = None
 
     # Initialize list of all valid moves (positions (x, y) on the 10x10 grid)
     valid_moves = [(x, y) for x in range(10) for y in range(10)]
@@ -308,14 +330,15 @@ def run():
                     valid_moves  # Pass the valid moves list to the AI
                 )
             elif ai_difficulty == "medium":
-                last_ai_hit, ship_in_progress = ai_medium(
+                last_ai_hit, ship_in_progress, direction = ai_medium(
                     battleship.player1placedShips,
                     battleship.player2TargetBoard,
                     battleship.player2hits,
                     battleship.player2misses,
                     valid_moves,
                     last_hit=last_ai_hit,
-                    ship_in_progress=ship_in_progress
+                    ship_in_progress=ship_in_progress,
+                    direction=direction
                 )
             elif ai_difficulty == "hard":
                 ai_hard()
@@ -335,6 +358,8 @@ def run():
 
         turn_counter += 1  # Increment turn counter
         pygame.display.update()
+
+
 
 
 
