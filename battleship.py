@@ -77,14 +77,6 @@ player2ready = False
 # track if game is over
 gameover = False
 
-#Intializes mixer which loads and plays sounds
-pygame.mixer.init()
-#Sound for hit in game
-soundHit = pygame.mixer.Sound("hit.wav")
-#Sound for miss in game
-soundMiss = pygame.mixer.Sound("miss.wav")
-
-
 
 # main handles all the logic and passing between files
 def main():
@@ -95,10 +87,6 @@ def main():
     pygame.init()
     # creates clock in pygame
     CLOCK = pygame.time.Clock()
-    #Loads inputed music file
-    pygame.mixer.music.load("theme.mp3")
-    #Plays song as long as application is open
-    pygame.mixer.music.play(-1)  
     #fill screen to black
     SCREEN.fill(BLACK)
     
@@ -141,16 +129,12 @@ def checkForCollision(targetBoard, shipBoard, pos, hits, misses, shipsPlaced, sh
         inShipsList = inShips(shipsPlaced, tempRectShip)
         if inShipsList:
             add_text.add_text(SCREEN, 'You hit a ship!')
-            #Play hit sound
-            pygame.mixer.Sound.play(soundHit)
             hits.append(tempRectTarget)
             hits.append(tempRectShip)
             removeFromShipsCopy(tempRectShip, shipsCopy)
         else:
             # otherwise you missed
             add_text.add_text(SCREEN, 'You did not hit a ship!')
-            #Play miss sound
-            pygame.mixer.Sound.play(soundMiss)
             misses.append(tempRectTarget)
             misses.append(tempRectShip)
     # return true since if you make it this far is was a valud move
@@ -267,7 +251,111 @@ def printShipBoard(board, ships, hits):
             else:
                 pygame.draw.rect(SCREEN, WHITE, y, 1)
 
-def printAIShipBoard(board, ships, hits, misses):
+    ship1 = False
+    ship2 = False
+    ship3 = False
+    ship4 = False
+    ship5 = False
+
+    orientation = None
+    for i in ships:
+        
+        if(len(i) > 1):
+            if(i[0][1] < i[1][1]):
+                orientation = 'downwards'
+            elif(i[0][1] > i[1][1]):
+                orientation = 'upwards'
+            elif(i[0][0] > i[1][0]):
+                orientation = 'flipped'
+
+        if(len(i) == 1 and ship1 == False):
+            ship = pygame.image.load('pictures/cruiser.png')
+            imagerect = (i[0][0], i[0][1], 20, 20)
+            SCREEN.blit(ship, imagerect)
+            ship1 = True
+            
+        if(len(i) == 2 and ship2 == False):
+            ship = pygame.image.load('pictures/submarine.png')
+            imagerect = (i[0][0], i[0][1], 20, 40)
+            if(orientation == 'flipped'):
+                ship = pygame.transform.flip(ship, True, False)
+                temp = list(imagerect)
+                temp[0] = temp[0] - 20
+                imagerect = tuple(temp)
+            elif(orientation == 'downwards'):
+                ship = pygame.transform.rotate(ship, 270)
+            elif(orientation == 'upwards'):
+                ship = pygame.transform.rotate(ship, 90)
+                temp = list(imagerect)
+                temp[1] = temp[1] - 20
+                imagerect = tuple(temp)
+            SCREEN.blit(ship,imagerect)
+            ship2 = True
+
+        if(len(i) == 3 and ship3 == False):
+            ship = pygame.image.load('pictures/destroyer.png')
+            imagerect = (i[0][0], i[0][1], 20, 60)
+            ship = pygame.transform.scale(ship, (60, 20))
+            if(orientation == 'flipped'):
+                
+                ship = pygame.transform.flip(ship, True, False)
+                temp = list(imagerect)
+                temp[0] = temp[0] - 40
+                imagerect = tuple(temp)
+            elif(orientation == 'downwards'):
+                ship = pygame.transform.rotate(ship, 270)
+            elif(orientation == 'upwards'):
+                ship = pygame.transform.rotate(ship, 90)
+                temp = list(imagerect)
+                temp[1] = temp[1] - 40
+                imagerect = tuple(temp)
+            SCREEN.blit(ship, imagerect)
+            ship3 = True
+
+        if(len(i) == 4 and ship4 == False):
+            ship = pygame.image.load('pictures/battleship.png')
+            imagerect = (i[0][0], i[0][1], 20, 80)
+            ship = pygame.transform.scale(ship, (80, 20))
+            if(orientation == 'flipped'):
+                
+                ship = pygame.transform.flip(ship, True, False)
+                temp = list(imagerect)
+                temp[0] = temp[0] - 60
+                imagerect = tuple(temp)
+            elif(orientation == 'downwards'):
+                ship = pygame.transform.rotate(ship, 270)
+            elif(orientation == 'upwards'):
+                ship = pygame.transform.rotate(ship, 90)
+                temp = list(imagerect)
+                temp[1] = temp[1] - 60
+                imagerect = tuple(temp)
+            SCREEN.blit(ship, imagerect)
+            ship4 = True
+        if(len(i) == 5 and ship5 == False):
+            ship = pygame.image.load('pictures/carrier.png')
+            imagerect = (i[0][0], i[0][1], 20, 100)
+            ship = pygame.transform.scale(ship, (100, 20))
+            if(orientation == 'flipped'):
+                
+                ship = pygame.transform.flip(ship, True, False)
+                temp = list(imagerect)
+                temp[0] = temp[0] - 80
+                imagerect = tuple(temp)
+            elif(orientation == 'downwards'):
+                ship = pygame.transform.rotate(ship, 270)
+            elif(orientation == 'upwards'):
+                ship = pygame.transform.rotate(ship, 90)
+                temp = list(imagerect)
+                temp[1] = temp[1] - 80
+                imagerect = tuple(temp)
+            SCREEN.blit(ship, imagerect)
+            ship5 = True
+
+    pygame.display.flip()
+    
+    
+
+def printAIShipBoard(board, ships, hits, misses, isAI):
     for x in board:
         for y in x:
             if(inShips(ships, y)):
@@ -278,7 +366,111 @@ def printAIShipBoard(board, ships, hits, misses):
             elif(inMisses(misses, y)):
                 pygame.draw.rect(SCREEN, GREEN, y, 1)
             else:
-                pygame.draw.rect(SCREEN, WHITE, y, 1)              
+                pygame.draw.rect(SCREEN, WHITE, y, 1)
+
+    if(not isAI):
+        ship1 = False
+        ship2 = False
+        ship3 = False
+        ship4 = False
+        ship5 = False
+
+        orientation = None
+        for i in ships:
+            
+            if(len(i) > 1):
+                if(i[0][1] < i[1][1]):
+                    orientation = 'downwards'
+                elif(i[0][1] > i[1][1]):
+                    orientation = 'upwards'
+                elif(i[0][0] > i[1][0]):
+                    orientation = 'flipped'
+
+            if(len(i) == 1 and ship1 == False):
+                ship = pygame.image.load('pictures/cruiser.png')
+                imagerect = (i[0][0], i[0][1], 20, 20)
+                SCREEN.blit(ship, imagerect)
+                ship1 = True
+                
+            if(len(i) == 2 and ship2 == False):
+                ship = pygame.image.load('pictures/submarine.png')
+                imagerect = (i[0][0], i[0][1], 20, 40)
+                if(orientation == 'flipped'):
+                    ship = pygame.transform.flip(ship, True, False)
+                    temp = list(imagerect)
+                    temp[0] = temp[0] - 20
+                    imagerect = tuple(temp)
+                elif(orientation == 'downwards'):
+                    ship = pygame.transform.rotate(ship, 270)
+                elif(orientation == 'upwards'):
+                    ship = pygame.transform.rotate(ship, 90)
+                    temp = list(imagerect)
+                    temp[1] = temp[1] - 20
+                    imagerect = tuple(temp)
+                SCREEN.blit(ship,imagerect)
+                ship2 = True
+
+            if(len(i) == 3 and ship3 == False):
+                ship = pygame.image.load('pictures/destroyer.png')
+                imagerect = (i[0][0], i[0][1], 20, 60)
+                ship = pygame.transform.scale(ship, (60, 20))
+                if(orientation == 'flipped'):
+                    
+                    ship = pygame.transform.flip(ship, True, False)
+                    temp = list(imagerect)
+                    temp[0] = temp[0] - 40
+                    imagerect = tuple(temp)
+                elif(orientation == 'downwards'):
+                    ship = pygame.transform.rotate(ship, 270)
+                elif(orientation == 'upwards'):
+                    ship = pygame.transform.rotate(ship, 90)
+                    temp = list(imagerect)
+                    temp[1] = temp[1] - 40
+                    imagerect = tuple(temp)
+                SCREEN.blit(ship, imagerect)
+                ship3 = True
+
+            if(len(i) == 4 and ship4 == False):
+                ship = pygame.image.load('pictures/battleship.png')
+                imagerect = (i[0][0], i[0][1], 20, 80)
+                ship = pygame.transform.scale(ship, (80, 20))
+                if(orientation == 'flipped'):
+                    
+                    ship = pygame.transform.flip(ship, True, False)
+                    temp = list(imagerect)
+                    temp[0] = temp[0] - 60
+                    imagerect = tuple(temp)
+                elif(orientation == 'downwards'):
+                    ship = pygame.transform.rotate(ship, 270)
+                elif(orientation == 'upwards'):
+                    ship = pygame.transform.rotate(ship, 90)
+                    temp = list(imagerect)
+                    temp[1] = temp[1] - 60
+                    imagerect = tuple(temp)
+                SCREEN.blit(ship, imagerect)
+                ship4 = True
+            if(len(i) == 5 and ship5 == False):
+                ship = pygame.image.load('pictures/carrier.png')
+                imagerect = (i[0][0], i[0][1], 20, 100)
+                ship = pygame.transform.scale(ship, (100, 20))
+                if(orientation == 'flipped'):
+                    
+                    ship = pygame.transform.flip(ship, True, False)
+                    temp = list(imagerect)
+                    temp[0] = temp[0] - 80
+                    imagerect = tuple(temp)
+                elif(orientation == 'downwards'):
+                    ship = pygame.transform.rotate(ship, 270)
+                elif(orientation == 'upwards'):
+                    ship = pygame.transform.rotate(ship, 90)
+                    temp = list(imagerect)
+                    temp[1] = temp[1] - 80
+                    imagerect = tuple(temp)
+                SCREEN.blit(ship, imagerect)
+                ship5 = True
+
+        pygame.display.flip()
+    
 
 
 
