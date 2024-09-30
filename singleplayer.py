@@ -242,7 +242,7 @@ def run():
         # Player 1's turn
         if battleship.player1Turn:
             add_text.add_text(battleship.SCREEN, 'Player 1 Turn')
-            battleship.printAIShipBoard(battleship.player1ShipBoard, battleship.player1placedShips, battleship.player2hits, battleship.player2misses)
+            battleship.printAIShipBoard(battleship.player1ShipBoard, battleship.player1placedShips, battleship.player2hits, battleship.player2misses, False)
             battleship.printBoard(battleship.player1TargetBoard, battleship.player1hits, battleship.player1misses)
 
             for event in pygame.event.get():
@@ -294,7 +294,7 @@ def run():
             print("player 2 hits", battleship.player2hits)
             # Display AI's board showing hits and misses during the AI's turn
             add_text.add_text(battleship.SCREEN, 'AI Turn')
-            battleship.printAIShipBoard(battleship.player2ShipBoard, battleship.player2placedShips, battleship.player1hits, battleship.player1misses)
+            battleship.printAIShipBoard(battleship.player2ShipBoard, battleship.player2placedShips, battleship.player1hits, battleship.player1misses, True)
             battleship.printBoard(battleship.player2TargetBoard, battleship.player2hits, battleship.player2misses)
 
 
