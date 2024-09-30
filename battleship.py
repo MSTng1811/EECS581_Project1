@@ -77,6 +77,12 @@ player2ready = False
 # track if game is over
 gameover = False
 
+#Intializes mixer which loads and plays sounds
+pygame.mixer.init()
+#Sound for hit in game
+soundHit = pygame.mixer.Sound("hit.wav")
+#Sound for miss in game
+soundMiss = pygame.mixer.Sound("miss.wav")
 
 # main handles all the logic and passing between files
 def main():
@@ -87,6 +93,10 @@ def main():
     pygame.init()
     # creates clock in pygame
     CLOCK = pygame.time.Clock()
+    #Loads inputed music file
+    pygame.mixer.music.load("theme.mp3")
+    #Plays song as long as application is open
+    pygame.mixer.music.play(-1)  
     #fill screen to black
     SCREEN.fill(BLACK)
     
@@ -129,12 +139,16 @@ def checkForCollision(targetBoard, shipBoard, pos, hits, misses, shipsPlaced, sh
         inShipsList = inShips(shipsPlaced, tempRectShip)
         if inShipsList:
             add_text.add_text(SCREEN, 'You hit a ship!')
+            #Play hit sound
+            pygame.mixer.Sound.play(soundHit)
             hits.append(tempRectTarget)
             hits.append(tempRectShip)
             removeFromShipsCopy(tempRectShip, shipsCopy)
         else:
             # otherwise you missed
             add_text.add_text(SCREEN, 'You did not hit a ship!')
+            #Play miss sound
+            pygame.mixer.Sound.play(soundMiss)
             misses.append(tempRectTarget)
             misses.append(tempRectShip)
     # return true since if you make it this far is was a valud move
