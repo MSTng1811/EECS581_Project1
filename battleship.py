@@ -1,479 +1,365 @@
 import copy
-from operator import truediv
-from matplotlib.pyplot import pause
+import random
 import pygame
 import sys
 import add_text
 import place_ships
 import get_ships_num
-import get_game_mode
-import multiplayer
-import singleplayer
-
-#colors in RGB form
-BLACK = (0, 0, 0)
-WHITE = (200, 200, 200)
-RED = (255, 0, 0)
-BLUE = (0, 0, 255)
-GREEN = (0, 255, 0)
-# height of window for pygame
-WINDOW_HEIGHT = 400
-#width of window for pygame
-WINDOW_WIDTH = 490
-#initializes screen in pygame
-SCREEN = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-
-# following code is inspired and similar to thread on creating a grid for a snake game in pygane
-# https://stackoverflow.com/questions/33963361/how-to-make-a-grid-in-pygame
-# creates grid (10x10) with width and height of 20 for each block
-def createPlayer1ShipGrid():
-    blockSize = 20 #Set the size of the grid block
-    playerBoard = []
-    for x in range(30, 230, blockSize):
-        subBoard = []
-        for y in range(100, 300, blockSize):
-            rect = pygame.Rect(x, y, blockSize, blockSize)
-            subBoard.append(rect)
-            #pygame.draw.rect(SCREEN, WHITE, rect, 1)
-        playerBoard.append(subBoard)
-    return playerBoard
-
-# following code is inspired and similar to thread on creating a grid for a snake game in pygane
-# https://stackoverflow.com/questions/33963361/how-to-make-a-grid-in-pygame
-# creates grid (10x10) with width and height of 20 for each block
-def createPlayer1TargetGrid():
-    blockSize = 20 #Set the size of the grid block
-    playerBoard = []
-    for x in range(260, WINDOW_WIDTH-30, blockSize):
-        subBoard = []
-        for y in range(100, 300, blockSize):
-            rect = pygame.Rect(x, y, blockSize, blockSize)
-            subBoard.append(rect)
-            #pygame.draw.rect(SCREEN, WHITE, rect, 1)
-        playerBoard.append(subBoard)
-    return playerBoard
+import battleship
+import get_difficulty
 
 
-player1ShipBoard = createPlayer1ShipGrid() # 2-D array with rects stored in it, represents player1board for their own ships
-player1TargetBoard = createPlayer1TargetGrid() # 2-D array with rects stored in it, represents the targets for player 1
-player1hits=[] # will store rect objects of hits
-player1misses=[] # will store rect objects of misses
-player1ships = [] # will hold the sizes for ships
-player1placedShips = [[],[],[],[]]  # 2d array that will hold the placed ships for player 1
-copyPlayer1placedShips = [] # non pointer copy of player1placedShips
-# same as objects above but for player 2
-player2ShipBoard = createPlayer1ShipGrid() # 2-D array with rects stored in it
-player2TargetBoard = createPlayer1TargetGrid() # 2-D array with rects stored in it
-player2hits=[]
-player2misses=[]
-player2ships = []
-player2placedShips = [[],[],[],[]]
-copyPlayer2placedShips = []
-# keeps track of if it is player 1 turn
-player1Turn = True
-# track if ships have been placed
-player1ready = False
-player2ready = False
-# track if game is over
-gameover = False
+def calculate_position_from_grid(row, col, grid_type="target"):
+    # Cell size is 20x20 pixels, as defined in createPlayer1TargetGrid
+    cell_size = 20
+
+    # Starting positions for each grid type (ships or target)
+    if grid_type == "ships":
+        offset_x = 40  # X offset for player ships grid
+        offset_y = 110  # Y offset for player ships rows
+    else:  # Target grid
+        offset_x = 260  # X offset for AI target grid (starts at 260)
+        offset_y = 100  # Y offset for rows (starts at 100 for the target grid)
+
+    # Calculate the top-left corner of the grid cell
+    x = offset_x + col * cell_size
+    y = offset_y + row * cell_size
+    return (x, y)
 
 
-# main handles all the logic and passing between files
-def main():
-    # following code is inspired and similar to thread on creating a grid for a snake game in pygane
-    # https://stackoverflow.com/questions/33963361/how-to-make-a-grid-in-pygame
-    global SCREEN, CLOCK
-    # initializes pygame
-    pygame.init()
-    # creates clock in pygame
-    CLOCK = pygame.time.Clock()
-    #fill screen to black
-    SCREEN.fill(BLACK)
-    
-    isSingleplayer = get_game_mode.set_mode(SCREEN)
-    if(isSingleplayer):
-        singleplayer.run()
+
+def ai_easy(player_ships, target_board, hits, misses, valid_moves):
+    """AI fires randomly in easy mode using a list of valid moves."""
+    if not valid_moves:
+        print("No more valid moves left for the AI.")
+        return
+
+    # Randomly select a position from valid moves
+    row, col = random.choice(valid_moves)
+
+    # Remove the selected move from valid moves so the AI doesn't shoot here again
+    valid_moves.remove((row, col))
+
+    # Calculate the top-left pixel position from the row and column
+    pos = calculate_position_from_grid(row, col, grid_type="target")
+
+    print(f"AI is attempting to shoot at grid position: ({row}, {col}) which maps to screen position {pos}")
+
+    # Check for valid move before attempting to check for collision
+    played = battleship.checkForCollision(
+        battleship.player2TargetBoard,  # AI's target board (where AI shoots)
+        battleship.player1ShipBoard,    # Player's ship board (Player's ships that AI is attacking)
+        pos,                            # AI's randomly selected position (converted to coordinates)
+        battleship.player2hits,         # AI's hit list
+        battleship.player2misses,       # AI's miss list
+        battleship.player1placedShips,  # Player's placed ships (being attacked by AI)
+        copy.deepcopy(battleship.player1placedShips)  # Deep copy of player's ships to track state
+    )
+
+    if played:
+        print(f"AI successfully played at: ({row}, {col})")
+        battleship.player1Turn = True  # Add this line to switch back to player turn
     else:
-        multiplayer.run()
+        print(f"AI's move at ({row}, {col}) - ({pos}) was invalid.")
+        print(f"Hits: {hits}, Misses: {misses}")
 
+def get_adjacent_cells(row, col, valid_moves):
+    """Returns valid adjacent cells around the (row, col) coordinate."""
+    adjacent_cells = []
+    potential_moves = [
+        (row - 1, col),  # Up
+        (row + 1, col),  # Down
+        (row, col - 1),  # Left
+        (row, col + 1),  # Right
+    ]
+    for move in potential_moves:
+        if move in valid_moves:
+            adjacent_cells.append(move)
+    return adjacent_cells
 
-# creates a shallow copy of a 2d array
-def createShallowCopy(ships):
-    temp = []
-    temp2 = []
-    for x in ships:
-        temp2 = []
-        for y in x:
-            temp2.append(y)
-        temp.append(temp2)
-    return temp
-
-def checkForCollision(targetBoard, shipBoard, pos, hits, misses, shipsPlaced, shipsCopy):
-    hit = False 
-    # get the rect object and row and col
-    rect = getRectangle(targetBoard, pos)
-    row = getRow(targetBoard, rect)
-    col = getCol(targetBoard, rect)
-    # if you have an invalid row, then you did not hit anything and need new user input
-    if row == -1 or col == -1:
-        return False
-    else:
-        # otherwisecheck if you already hit the ship or already missed it, since you would need new user input
-        tempRectTarget = (targetBoard[row])[col]
-        tempRectShip = (shipBoard[row])[col]
-        alreadyHit = inHits(hits, tempRectShip)
-        alreadyMissed = inMisses(misses, tempRectShip)
-        if alreadyHit or alreadyMissed: 
-            return False
-        # if it is in their ships, you have a hit
-        inShipsList = inShips(shipsPlaced, tempRectShip)
-        if inShipsList:
-            add_text.add_text(SCREEN, 'You hit a ship!')
-            hits.append(tempRectTarget)
-            hits.append(tempRectShip)
-            removeFromShipsCopy(tempRectShip, shipsCopy)
+def ai_medium(player_ships, target_board, hits, misses, valid_moves, last_hit=None, ship_in_progress=None, direction=None):
+    """AI fires randomly until it hits, then fires adjacent cells until the ship is sunk."""
+    if not valid_moves:
+        print("No more moves left for the AI")
+        return last_hit, ship_in_progress, direction
+    if ship_in_progress:
+        # If there's a ship being attacked, target adjacent cells
+        row, col = ship_in_progress
+        if direction == "up" and (row - 1, col) in valid_moves:
+            row, col = row - 1, col
+        elif direction == "down" and (row + 1, col) in valid_moves:
+            row, col = row + 1, col
+        elif direction == "left" and (row, col - 1) in valid_moves:
+            row, col = row, col - 1
+        elif direction == "right" and (row, col + 1) in valid_moves:
+            row, col = row, col + 1
         else:
-            # otherwise you missed
-            add_text.add_text(SCREEN, 'You did not hit a ship!')
-            misses.append(tempRectTarget)
-            misses.append(tempRectShip)
-    # return true since if you make it this far is was a valud move
-    return True
-
-
-
-# removes rect from the copy so that you can track what ships have been hit    
-def removeFromShipsCopy(rect, shipsCopy):
-    for x in shipsCopy:
-        for y in x:
-            if rect == y:
-                x.remove(y)
-
-#checks if an array within 2-d array is empty. If so you have a sunk ship
-def shipSunk(shipsCopy):
-    for x in shipsCopy:
-        if(len(x) == 0):
-            shipsCopy.remove(x)
-            return True
-    return False
-
-# if shipsCopy has length 0 then all ships are sunk and game is over
-def gameIsOver(shipsCopy):
-    if(len(shipsCopy) == 0):
-        return True
+            # If the direction is blocked, reset and try adjacent cells from the original hit
+            direction = None
+        if not direction:
+            # Choose a new direction from adjacent cells
+            adjacent_cells = get_adjacent_cells(last_hit[0], last_hit[1], valid_moves)
+            if adjacent_cells:
+                row, col = random.choice(adjacent_cells)
+                valid_moves.remove((row, col))
+                # Set the direction based on the move
+                if row < last_hit[0]:
+                    direction = "up"
+                elif row > last_hit[0]:
+                    direction = "down"
+                elif col < last_hit[1]:
+                    direction = "left"
+                elif col > last_hit[1]:
+                    direction = "right"
+            else:
+                # If no adjacent cells, fire randomly
+                row, col = random.choice(valid_moves)
+                ship_in_progress = None
+                direction = None
     else:
-        return False
+        # If no adjacent cells are valid, fire randomly again
+        row, col = random.choice(valid_moves)
+        valid_moves.remove((row, col))
+    # Calculate pos from the grid
+    pos = calculate_position_from_grid(row, col, grid_type="target")
+    print(f"AI (medium) is attempting to shoot at grid position: ({row}, {col}) which maps to screen position {pos}")
+    # Check for valid move before attempting to check for collision
+    played = battleship.checkForCollision(
+        battleship.player2TargetBoard,  # AI's target board (where AI shoots)
+        battleship.player1ShipBoard,    # Player's ship board (Player's ships that AI is attacking)
+        pos,                            # AI's randomly selected position (converted to coordinates)
+        battleship.player2hits,         # AI's hit list
+        battleship.player2misses,       # AI's miss list
+        battleship.player1placedShips,  # Player's placed ships (being attacked by AI)
+        copy.deepcopy(battleship.player1placedShips)  # Deep copy of player's ships to track state
+    )
+    if played:
+        print(f"AI successfully played at: ({row}, {col})")
+        # If the shot hit a ship, update the `ship_in_progress` to continue targeting adjacent cells
+        if battleship.inShips(battleship.player1placedShips, (row, col)):
+            print("AI hit a ship!")
+            ship_in_progress = (row, col)
+            last_hit = (row, col)
+        else:
+            direction = None
+        # Check if a ship was sunk
+        if battleship.shipSunk(battleship.copyPlayer1placedShips):
+            print("AI sunk a ship!")
+            ship_in_progress = None  # Reset targeting if the ship is sunk
+            last_hit = None
+            direction = None
+        battleship.player1Turn = True  # Switch to player turn after AI finishes
+    else:
+        print(f"AI's move at ({row}, {col}) - ({pos}) was invalid.")
+    return last_hit, ship_in_progress, direction
+    
+def ai_hard():
+    """AI always hits a ship in hard mode by targeting known ship rectangles."""
+    player_ships_rects = battleship.player1placedShips
+    # Iterate through each ship (which is a list of rects)
+    for ship in player_ships_rects:
+        # Iterate through each rectangle (part of the ship)
+        for ship_rect in ship:
+            # Get the center of the rectangle (AI targets the center point of the ship's rect)
+            pos = (ship_rect.centerx + 230, ship_rect.centery)
 
-# return rect object given the board and mouse position
-# based off of https://stackoverflow.com/questions/7415109/creating-a-rect-grid-in-pygame
-def getRectangle(board, pos):
-    for x in range(0, len(board)):
-        for y in range(0, len(board)):
-            tempRect = (board[x])[y]
-            if tempRect.collidepoint(pos):
-                return tempRect
+            # Call checkForCollision for the center of the ship rectangle
+            played = battleship.checkForCollision(
+                battleship.player2TargetBoard,  # AI's target board (where AI shoots)
+                battleship.player1ShipBoard,    # Player's ship board (Player's ships that AI is attacking)
+                pos,                            # AI's selected position (the center of the ship's rect)
+                battleship.player2hits,         # AI's hit list
+                battleship.player2misses,       # AI's miss list
+                battleship.player1placedShips,  # Player's placed ships (being attacked by AI)
+                battleship.copyPlayer1placedShips  # Deep copy of player's ships to track state
+            )
 
-# return row of a rectangle
-def getRow(board, rect):
-    tempRect = None
-    for x in range(0, 10):
-        for y in range(0,10):
-            tempRect = (board[x])[y]
-            if tempRect == rect:
-                return x
-    #print(tempRect)
-    return -1
+            if played:
+                print(f"AI hits at {pos}.")
+                # Check if the ship was sunk
+                sunkenShip = battleship.shipSunk(battleship.copyPlayer1placedShips)  # Check if player ship was sunk
+                if sunkenShip:
+                    add_text.add_text(battleship.SCREEN, 'The AI sunk one of your ships!')
+                    pygame.display.update()
 
-# return column of a rectangle
-def getCol(board, rect):
-    tempRect = None
-    for x in range(0, 10):
-        for y in range(0,10):
-            tempRect = (board[x])[y]
-            if tempRect == rect:
-                return y
-    #print(tempRect)
-    return -1
-
-# check if a rectangle is in the hits array
-def inHits(board, rect):
-    for x in board:
-        if rect == x:
-            return True
-    return False
-
-# check if a rectangle is in the misses array
-def inMisses(board, rect):
-    for x in board:
-        if rect == x:
-            return True
-    return False
-
-# check if a rectangle is in the ships 2-d array
-def inShips(board, rect):
-    for x in board:
-        for y in x:
-            if rect == y:
-                return True
-    return False
-
-# check if a rectangle is in the hit ships array
-def inHitShips(hits, rect):
-    for x in hits:
-        if rect == x:
-            return True
-    return False
-
-# following code is inspired and similar to thread on creating a grid for a snake game in pygane
-# https://stackoverflow.com/questions/33963361/how-to-make-a-grid-in-pygame
-# prints a board given 2-d array created in above functions. checks for hits and misses and changes color accordingly
-def printBoard(board, hits, misses):
-    for x in board:
-        for y in x:
-            if(inHits(hits, y)):
-                pygame.draw.rect(SCREEN, RED, y, 1)
-            elif(inMisses(misses, y)):
-                pygame.draw.rect(SCREEN, GREEN, y, 1)
-            else:
-                pygame.draw.rect(SCREEN, WHITE, y, 1)
-
-# following code is inspired and similar to thread on creating a grid for a snake game in pygane
-# https://stackoverflow.com/questions/33963361/how-to-make-a-grid-in-pygame
-# prints a board given 2-d array created in above functions. shows which of your ships have been hit
-def printShipBoard(board, ships, hits):
-    for x in board:
-        for y in x:
-            if(inShips(ships, y)):
-                if(inHits(hits, y)):
-                    pygame.draw.rect(SCREEN, RED, y, 1)
+                # Check if all of the player's ships have been sunk (end game)
+                if battleship.gameIsOver(battleship.copyPlayer1placedShips):
+                    battleship.gameover = True
+                    add_text.add_text(battleship.SCREEN, 'AI wins! All Player ships sunk.')
+                    pygame.display.update()
+                    return  # End the game when all player ships are sunk
                 else:
-                    pygame.draw.rect(SCREEN, BLUE, y, 1)
-            else:
-                pygame.draw.rect(SCREEN, WHITE, y, 1)
+                    battleship.player1Turn = True  # Switch back to player's turn after a hit
+                return  # End AI's turn after a valid move
 
-    ship1 = False
-    ship2 = False
-    ship3 = False
-    ship4 = False
-    ship5 = False
+        print("SHIPS", battleship.player1placedShips)
 
-    orientation = None
-    for i in ships:
-        
-        if(len(i) > 1):
-            if(i[0][1] < i[1][1]):
-                orientation = 'downwards'
-            elif(i[0][1] > i[1][1]):
-                orientation = 'upwards'
-            elif(i[0][0] > i[1][0]):
-                orientation = 'flipped'
+    print(f"AI's move at ({pos}) was invalid.")
 
-        if(len(i) == 1 and ship1 == False):
-            ship = pygame.image.load('pictures/cruiser.png')
-            imagerect = (i[0][0], i[0][1], 20, 20)
-            SCREEN.blit(ship, imagerect)
-            ship1 = True
-            
-        if(len(i) == 2 and ship2 == False):
-            ship = pygame.image.load('pictures/submarine.png')
-            imagerect = (i[0][0], i[0][1], 20, 40)
-            if(orientation == 'flipped'):
-                ship = pygame.transform.flip(ship, True, False)
-                temp = list(imagerect)
-                temp[0] = temp[0] - 20
-                imagerect = tuple(temp)
-            elif(orientation == 'downwards'):
-                ship = pygame.transform.rotate(ship, 270)
-            elif(orientation == 'upwards'):
-                ship = pygame.transform.rotate(ship, 90)
-                temp = list(imagerect)
-                temp[1] = temp[1] - 20
-                imagerect = tuple(temp)
-            SCREEN.blit(ship,imagerect)
-            ship2 = True
 
-        if(len(i) == 3 and ship3 == False):
-            ship = pygame.image.load('pictures/destroyer.png')
-            imagerect = (i[0][0], i[0][1], 20, 60)
-            ship = pygame.transform.scale(ship, (60, 20))
-            if(orientation == 'flipped'):
-                
-                ship = pygame.transform.flip(ship, True, False)
-                temp = list(imagerect)
-                temp[0] = temp[0] - 40
-                imagerect = tuple(temp)
-            elif(orientation == 'downwards'):
-                ship = pygame.transform.rotate(ship, 270)
-            elif(orientation == 'upwards'):
-                ship = pygame.transform.rotate(ship, 90)
-                temp = list(imagerect)
-                temp[1] = temp[1] - 40
-                imagerect = tuple(temp)
-            SCREEN.blit(ship, imagerect)
-            ship3 = True
 
-        if(len(i) == 4 and ship4 == False):
-            ship = pygame.image.load('pictures/battleship.png')
-            imagerect = (i[0][0], i[0][1], 20, 80)
-            ship = pygame.transform.scale(ship, (80, 20))
-            if(orientation == 'flipped'):
-                
-                ship = pygame.transform.flip(ship, True, False)
-                temp = list(imagerect)
-                temp[0] = temp[0] - 60
-                imagerect = tuple(temp)
-            elif(orientation == 'downwards'):
-                ship = pygame.transform.rotate(ship, 270)
-            elif(orientation == 'upwards'):
-                ship = pygame.transform.rotate(ship, 90)
-                temp = list(imagerect)
-                temp[1] = temp[1] - 60
-                imagerect = tuple(temp)
-            SCREEN.blit(ship, imagerect)
-            ship4 = True
-        if(len(i) == 5 and ship5 == False):
-            ship = pygame.image.load('pictures/carrier.png')
-            imagerect = (i[0][0], i[0][1], 20, 100)
-            ship = pygame.transform.scale(ship, (100, 20))
-            if(orientation == 'flipped'):
-                
-                ship = pygame.transform.flip(ship, True, False)
-                temp = list(imagerect)
-                temp[0] = temp[0] - 80
-                imagerect = tuple(temp)
-            elif(orientation == 'downwards'):
-                ship = pygame.transform.rotate(ship, 270)
-            elif(orientation == 'upwards'):
-                ship = pygame.transform.rotate(ship, 90)
-                temp = list(imagerect)
-                temp[1] = temp[1] - 80
-                imagerect = tuple(temp)
-            SCREEN.blit(ship, imagerect)
-            ship5 = True
 
-    pygame.display.flip()
+
+def run():
+
+    ai_difficulty = get_difficulty.set_difficulty(battleship.SCREEN)
+    print("singleplayer mode with AI difficulty:", ai_difficulty)
+
+    # Get the number of ships that the user wants for the game and returns arrays
+    arrays = get_ships_num.get_ships(
+        battleship.player1ships,
+        battleship.player2ships,
+        battleship.SCREEN,
+        battleship.player1placedShips,
+        battleship.player2placedShips
+    )
     
-    
+    battleship.player1ships = arrays[0]
+    battleship.player2ships = arrays[1]
+    battleship.player1placedShips = arrays[2]
+    battleship.player2placedShips = arrays[3]
 
-def printAIShipBoard(board, ships, hits, misses, isAI):
-    for x in board:
-        for y in x:
-            if(inShips(ships, y)):
-                if(inHits(hits, y)):
-                    pygame.draw.rect(SCREEN, RED, y, 1)
-                else:
-                    pygame.draw.rect(SCREEN, BLUE, y, 1)
-            elif(inMisses(misses, y)):
-                pygame.draw.rect(SCREEN, GREEN, y, 1)
-            else:
-                pygame.draw.rect(SCREEN, WHITE, y, 1)
+    # Calculate the total number of ship parts for Player 1
+    total_player_ship_parts = sum(len(ship) for ship in battleship.player1placedShips)
 
-    if(not isAI):
-        ship1 = False
-        ship2 = False
-        ship3 = False
-        ship4 = False
-        ship5 = False
+    last_ai_hit = None  # Track last AI hit for medium difficulty
+    ship_in_progress = None  # Track if AI is focusing on sinking a ship
+    direction = None
 
-        orientation = None
-        for i in ships:
-            
-            if(len(i) > 1):
-                if(i[0][1] < i[1][1]):
-                    orientation = 'downwards'
-                elif(i[0][1] > i[1][1]):
-                    orientation = 'upwards'
-                elif(i[0][0] > i[1][0]):
-                    orientation = 'flipped'
+    # Initialize list of all valid moves (positions (x, y) on the 10x10 grid)
+    valid_moves = [(x, y) for x in range(10) for y in range(10)]
 
-            if(len(i) == 1 and ship1 == False):
-                ship = pygame.image.load('pictures/cruiser.png')
-                imagerect = (i[0][0], i[0][1], 20, 20)
-                SCREEN.blit(ship, imagerect)
-                ship1 = True
-                
-            if(len(i) == 2 and ship2 == False):
-                ship = pygame.image.load('pictures/submarine.png')
-                imagerect = (i[0][0], i[0][1], 20, 40)
-                if(orientation == 'flipped'):
-                    ship = pygame.transform.flip(ship, True, False)
-                    temp = list(imagerect)
-                    temp[0] = temp[0] - 20
-                    imagerect = tuple(temp)
-                elif(orientation == 'downwards'):
-                    ship = pygame.transform.rotate(ship, 270)
-                elif(orientation == 'upwards'):
-                    ship = pygame.transform.rotate(ship, 90)
-                    temp = list(imagerect)
-                    temp[1] = temp[1] - 20
-                    imagerect = tuple(temp)
-                SCREEN.blit(ship,imagerect)
-                ship2 = True
-
-            if(len(i) == 3 and ship3 == False):
-                ship = pygame.image.load('pictures/destroyer.png')
-                imagerect = (i[0][0], i[0][1], 20, 60)
-                ship = pygame.transform.scale(ship, (60, 20))
-                if(orientation == 'flipped'):
-                    
-                    ship = pygame.transform.flip(ship, True, False)
-                    temp = list(imagerect)
-                    temp[0] = temp[0] - 40
-                    imagerect = tuple(temp)
-                elif(orientation == 'downwards'):
-                    ship = pygame.transform.rotate(ship, 270)
-                elif(orientation == 'upwards'):
-                    ship = pygame.transform.rotate(ship, 90)
-                    temp = list(imagerect)
-                    temp[1] = temp[1] - 40
-                    imagerect = tuple(temp)
-                SCREEN.blit(ship, imagerect)
-                ship3 = True
-
-            if(len(i) == 4 and ship4 == False):
-                ship = pygame.image.load('pictures/battleship.png')
-                imagerect = (i[0][0], i[0][1], 20, 80)
-                ship = pygame.transform.scale(ship, (80, 20))
-                if(orientation == 'flipped'):
-                    
-                    ship = pygame.transform.flip(ship, True, False)
-                    temp = list(imagerect)
-                    temp[0] = temp[0] - 60
-                    imagerect = tuple(temp)
-                elif(orientation == 'downwards'):
-                    ship = pygame.transform.rotate(ship, 270)
-                elif(orientation == 'upwards'):
-                    ship = pygame.transform.rotate(ship, 90)
-                    temp = list(imagerect)
-                    temp[1] = temp[1] - 60
-                    imagerect = tuple(temp)
-                SCREEN.blit(ship, imagerect)
-                ship4 = True
-            if(len(i) == 5 and ship5 == False):
-                ship = pygame.image.load('pictures/carrier.png')
-                imagerect = (i[0][0], i[0][1], 20, 100)
-                ship = pygame.transform.scale(ship, (100, 20))
-                if(orientation == 'flipped'):
-                    
-                    ship = pygame.transform.flip(ship, True, False)
-                    temp = list(imagerect)
-                    temp[0] = temp[0] - 80
-                    imagerect = tuple(temp)
-                elif(orientation == 'downwards'):
-                    ship = pygame.transform.rotate(ship, 270)
-                elif(orientation == 'upwards'):
-                    ship = pygame.transform.rotate(ship, 90)
-                    temp = list(imagerect)
-                    temp[1] = temp[1] - 80
-                    imagerect = tuple(temp)
-                SCREEN.blit(ship, imagerect)
-                ship5 = True
-
-        pygame.display.flip()
-    
+    # Player 1 places ships manually
+    while not battleship.player1ready:
+        player_ship_coords = place_ships.placePlayer1Ships(
+            battleship.SCREEN,
+            battleship.player1ships,
+            battleship.player1placedShips,
+            battleship.player1ShipBoard
+        )
+        battleship.player1ready = True
+        battleship.copyPlayer1placedShips = battleship.createShallowCopy(battleship.player1placedShips)
 
 
+    # AI places ships automatically
+    if not battleship.player2ready:
+        place_ships.placeAiShips(
+            battleship.SCREEN,
+            battleship.player2ships,
+            battleship.player2placedShips,
+            battleship.player2ShipBoard
+        )
+        battleship.player2ready = True
+        battleship.copyPlayer2placedShips = battleship.createShallowCopy(battleship.player2placedShips)
 
-# so that each import does not call main function
-if __name__ == "__main__":
-    main()
+    # Main game loop (Player vs AI turns)
+    turn_counter = 0  # Count the turns to track progress
+
+    while not battleship.gameover:
+        pos = pygame.mouse.get_pos()
+
+        add_text.add_text(battleship.SCREEN, 'Battleship')
+        add_text.add_labels_targets(battleship.SCREEN)
+
+        # Player 1's turn
+        if battleship.player1Turn:
+            add_text.add_text(battleship.SCREEN, 'Player 1 Turn')
+            battleship.printAIShipBoard(battleship.player1ShipBoard, battleship.player1placedShips, battleship.player2hits, battleship.player2misses, False)
+            battleship.printBoard(battleship.player1TargetBoard, battleship.player1hits, battleship.player1misses)
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    print(f"Player is attempting to shoot at mouse position: {pos}")
+                    played = battleship.checkForCollision(
+                        battleship.player1TargetBoard,
+                        battleship.player2ShipBoard,
+                        pos,
+                        battleship.player1hits,
+                        battleship.player1misses,
+                        battleship.player2placedShips,
+                        battleship.copyPlayer2placedShips
+                    )
+                    if played:
+                        print(f"Player's shot at {pos} was valid.")
+                        battleship.player1Turn = False  # Switch to AI's turn after valid move
+                        pygame.time.wait(1000)
+
+                        # Check if a ship was sunk
+                        ship_sunk = battleship.shipSunk(battleship.copyPlayer2placedShips)
+                        if ship_sunk:
+                            print("You sunk an AI ship!")
+                            add_text.add_text(battleship.SCREEN, 'You sunk an AI ship!')
+                            pygame.display.update()
+                            pygame.time.wait(2000)
+
+                        # Check if all ships are sunk (end game)
+                        game_over = battleship.gameIsOver(battleship.copyPlayer2placedShips)
+                        if game_over:
+                            print("All AI ships have been sunk. Player wins!")
+                            add_text.add_text(battleship.SCREEN, 'Player wins! All AI ships sunk.')
+                            pygame.display.update()
+                            pygame.time.wait(3000)
+                            battleship.gameover = True
+                            break
+                    else:
+                        print(f"Player's shot at {pos} was invalid.")
+
+        # AI's turn
+        else:
+            print(f"AI's turn {turn_counter}: AI is thinking...")
+            # print(f"Valid moves: {valid_moves}")
+
+            print("player 2 misses", battleship.player2misses)
+            print("player 2 hits", battleship.player2hits)
+            # Display AI's board showing hits and misses during the AI's turn
+            add_text.add_text(battleship.SCREEN, 'AI Turn')
+            battleship.printAIShipBoard(battleship.player2ShipBoard, battleship.player2placedShips, battleship.player1hits, battleship.player1misses, True)
+            battleship.printBoard(battleship.player2TargetBoard, battleship.player2hits, battleship.player2misses)
+
+
+            # Let the AI make its move based on the difficulty
+            if ai_difficulty == "easy":
+                ai_easy(
+                    battleship.player1placedShips,
+                    battleship.player2TargetBoard,
+                    battleship.player2hits,
+                    battleship.player2misses,
+                    valid_moves  # Pass the valid moves list to the AI
+                )
+            elif ai_difficulty == "medium":
+                last_ai_hit, ship_in_progress, direction = ai_medium(
+                    battleship.player1placedShips,
+                    battleship.player2TargetBoard,
+                    battleship.player2hits,
+                    battleship.player2misses,
+                    valid_moves,
+                    last_hit=last_ai_hit,
+                    ship_in_progress=ship_in_progress,
+                    direction=direction
+                )
+            elif ai_difficulty == "hard":
+                ai_hard()
+                battleship.player1Turn = 1
+
+            # Check if the AI sunk a ship after its move
+            sunkenShip = battleship.shipSunk(battleship.copyPlayer1placedShips)  # Player's ships
+            if(sunkenShip):
+                add_text.add_text(battleship.SCREEN, 'You sunk a ship!')
+                pygame.display.update()
+                ended = battleship.gameIsOver(battleship.copyPlayer2placedShips)
+                if ended:
+                    battleship.gameover = True
+                    add_text.add_text(battleship.SCREEN, 'Player 1 won!')
+                    pygame.display.update()
+
+
+        turn_counter += 1  # Increment turn counter
+        pygame.display.update()
+
+
+
+
+
