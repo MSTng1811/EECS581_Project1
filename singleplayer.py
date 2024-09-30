@@ -79,6 +79,9 @@ def get_adjacent_cells(row, col, valid_moves):
 
 def ai_medium(player_ships, target_board, hits, misses, valid_moves, last_hit=None, ship_in_progress=None):
     """AI fires randomly until it hits, then fires adjacent cells until the ship is sunk."""
+    if not valid_moves:
+        print("No more moves left for the AI")
+        return last_hit, ship_in_progress
     if ship_in_progress:
         # If there's a ship being attacked, target adjacent cells
         row, col = ship_in_progress
@@ -91,6 +94,7 @@ def ai_medium(player_ships, target_board, hits, misses, valid_moves, last_hit=No
             # If no adjacent cells are valid, fire randomly again
             row, col = random.choice(valid_moves)
             valid_moves.remove((row, col))
+            ship_in_progress = None
     else:
         # Fire randomly if no ship is being targeted
         row, col = random.choice(valid_moves)
@@ -119,8 +123,7 @@ def ai_medium(player_ships, target_board, hits, misses, valid_moves, last_hit=No
             ship_in_progress = None  # Reset if it was a miss
             last_hit = None
         # Check if a ship was sunk
-        ship_sunk = battleship.shipSunk(battleship.copyPlayer1placedShips)
-        if ship_sunk:
+        if battleship.shipSunk(battleship.copyPlayer1placedShips):
             print("AI sunk a ship!")
             ship_in_progress = None  # Reset targeting if the ship is sunk
             last_hit = None
