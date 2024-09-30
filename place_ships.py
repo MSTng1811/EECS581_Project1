@@ -36,6 +36,7 @@ import add_text
 import time
 import random
 
+
 # handles placing of player 1s ships
 def placePlayer1Ships(screen, ships, placedShips, shipBoard):
     player_ship_coords = []  # List to track the coordinates of placed ships
@@ -86,7 +87,7 @@ def placePlayer1Ships(screen, ships, placedShips, shipBoard):
                         # and `pos` is the top-left coordinate where the ship starts
                         # Get ship coordinates and append to player_ship_coords
                         player_ship_coords.append(pos)
-
+            
             pygame.display.update()
         else:
             shipsCopy.pop(0)
@@ -97,6 +98,9 @@ def placePlayer1Ships(screen, ships, placedShips, shipBoard):
 
     # Now you have all ship coordinates in player_ship_coords
     print("Player 1 placed ships at:", player_ship_coords)
+    screen.fill((0, 0, 0))  # Clear the screen
+    add_text.add_labels_ships(screen)  # Add column labels to the ship screen
+    add_text.add_labels_middle(screen)  # Add column labels to the target screen
     return player_ship_coords  # Return the list of ship coordinates
 
 # same as above but for player 2
@@ -141,7 +145,7 @@ def placePlayer2Ships(screen, ships, placedShips, shipBoard):
                 shipLength = shipsCopy[0]
                 initialLength = shipLength
                 index = index + 1
-
+    screen.fill((0, 0, 0))
 
 def placeAiShips(screen, ships, placedShips, shipBoard):
     shipsCopy = ships
